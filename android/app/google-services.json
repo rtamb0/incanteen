@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "861790825220",
+    "project_id": "incanteen",
+    "storage_bucket": "incanteen.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:861790825220:android:571334080c812dc7423e51",
+        "android_client_info": {
+          "package_name": "com.example.incanteen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYKhI9MlFrsQ2IHED6Kb6ENkymmoju2GQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

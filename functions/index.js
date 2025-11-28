@@ -7,8 +7,8 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
+const { setGlobalOptions } = require("firebase-functions");
+const { onRequest } = require("firebase-functions/https");
 const logger = require("firebase-functions/logger");
 
 // For cost control, you can set the maximum number of containers that can be
@@ -30,3 +30,66 @@ setGlobalOptions({ maxInstances: 10 });
 //   logger.info("Hello logs!", {structuredData: true});
 //   response.send("Hello from Firebase!");
 // });
+
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+
+admin.initializeApp();
+const db = admin.firestore();
+
+exports.notifyKitchenNewOrder = functions.firestore
+  .document("orders/{orderId}")
+  .onCreate(async (snap, context) => {
+    const order = snap.data();
+
+    // Get the vendor(s) for this order
+    const vendorId = order.vendorId;
+    const vendorDoc = await db.collection("users").doc(vendorId).get();
+
+    if (!vendorDoc.exists) return null;
+
+    const fcmToken = vendorDoc.data().fcmToken;
+    if (!fcmToken) return null;
+
+    const payload = {
+      notification: {
+        title: "New Order Received!",
+        body: `Order #${context.params.orderId} has been placed.`,
+      },
+      data: {
+        orderId: context.params.orderId,
+        type: "new_order",
+      },
+    };
+
+    return admin.messaging().sendToDevice(fcmToken, payload);
+  });
+
+exports.notifyUserOrderReady = functions.firestore
+  .document("orders/{orderId}")
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
+
+    // Only notify if status changed to 'ready'
+    if (before.status === "ready" || after.status !== "ready") return null;
+
+    const userDoc = await db.collection("users").doc(after.userId).get();
+    if (!userDoc.exists) return null;
+
+    const fcmToken = userDoc.data().fcmToken;
+    if (!fcmToken) return null;
+
+    const payload = {
+      notification: {
+        title: "Your Order is Ready!",
+        body: `Order #${context.params.orderId} is ready for pickup.`,
+      },
+      data: {
+        orderId: context.params.orderId,
+        type: "order_ready",
+      },
+    };
+
+    return admin.messaging().sendToDevice(fcmToken, payload);
+  });

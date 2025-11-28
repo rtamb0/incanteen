@@ -22,7 +22,19 @@ class LandingPage extends StatelessWidget {
           ),
         ),
       ),
-      body: Center(child: Text("Hello Starter App!")),
+      body: Center(
+        child: Row(
+          children: [
+            Text("Hello Starter App!"),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, "/testAuth");
+              },
+              child: const Text("Go to Test Auth"),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
