@@ -51,28 +51,8 @@ class _IncanteenAppState extends State<IncanteenApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       
-      // Use builder to handle auth state and role-based routing
-      builder: (context, child) {
-        return StreamBuilder<User?>(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            // Still loading auth state
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const MaterialApp(
-                debugShowCheckedModeBanner: false,
-                home: Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                ),
-              );
-            }
-            
-            return child ?? const SizedBox.shrink();
-          },
-        );
-      },
-      
-      // Use initial route with custom logic
-      home: AuthWrapper(),
+      // Use home with AuthWrapper for auth state and role-based routing
+      home: const AuthWrapper(),
     );
   }
 }
