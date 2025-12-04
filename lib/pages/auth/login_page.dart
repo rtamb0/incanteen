@@ -30,7 +30,8 @@ class _LoginPageState extends State<LoginPage> {
       await AuthService().signIn(_email.text.trim(), _password.text.trim());
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, RoutesConstants.landingRoute);
+      // Pop all routes and return to root - auth state listener will handle redirect
+      Navigator.popUntil(context, (route) => route.isFirst);
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = switch (e.code) {
@@ -139,14 +140,13 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // Only enable this if route exists
-              // TextButton(
-              //   onPressed: () => Navigator.pushNamed(
-              //     context,
-              //     RoutesConstants.forgotPasswordRoute,
-              //   ),
-              //   child: const Text("Forgot password?"),
-              // ),
+              TextButton(
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  RoutesConstants.forgotPasswordRoute,
+                ),
+                child: const Text("Forgot password?"),
+              ),
             ],
           ),
         ),
