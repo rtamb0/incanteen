@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:incanteen/constants/style/style_constants.dart';
+import 'package:incanteen/routes/routes_constants.dart';
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -7,6 +8,7 @@ class LandingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: StyleConstants.scaffoldBackgroundColor,
@@ -23,14 +25,31 @@ class LandingPage extends StatelessWidget {
         ),
       ),
       body: Center(
-        child: Row(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Hello Starter App!"),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, "/testAuth");
-              },
-              child: const Text("Go to Test Auth"),
+            const Text("Welcome 👋", style: TextStyle(fontSize: 24)),
+
+            const SizedBox(height: 40),
+
+            SizedBox(
+              width: 200,
+              child: ElevatedButton(
+                onPressed: () =>
+                    Navigator.pushNamed(context, RoutesConstants.loginRoute),
+                child: const Text("Login"),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            SizedBox(
+              width: 200,
+              child: OutlinedButton(
+                onPressed: () =>
+                    Navigator.pushNamed(context, RoutesConstants.signupRoute),
+                child: const Text("Sign Up"),
+              ),
             ),
           ],
         ),
