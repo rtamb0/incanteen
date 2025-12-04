@@ -1,102 +1,231 @@
-// import 'package:flutter/material.dart';
-// import 'package:incanteen/services/auth/auth_service.dart';
-// import 'package:incanteen/routes/routes_constants.dart';
+import 'package:flutter/material.dart';
+import 'package:incanteen/services/auth/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:incanteen/constants/validation_constants.dart';
 
-// class SignupPage extends StatefulWidget {
-//   const SignupPage({Key? key}) : super(key: key);
+class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
 
-//   @override
-//   _SignupPageState createState() => _SignupPageState();
-// }
+  @override
+  State<SignupPage> createState() => _SignupPageState();
+}
 
-// class _SignupPageState extends State<SignupPage> {
-//   final _formKey = GlobalKey<FormState>();
-//   final TextEditingController _nameController = TextEditingController();
-//   final TextEditingController _emailController = TextEditingController();
-//   final TextEditingController _passwordController = TextEditingController();
-//   String _role = 'customer'; // or 'vendor'
+class _SignupPageState extends State<SignupPage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  
+  String _role = 'customer';
+  bool _isLoading = false;
+  String? _errorMessage;
 
-//   bool _loading = false;
+  Future<void> _signUp() async {
+    if (!_formKey.currentState!.validate()) return;
 
-//   void _signUp() async {
-//     if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-//     setState(() => _loading = true);
+    try {
+      await AuthService().signUp(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _nameController.text.trim(),
+        _role,
+      );
 
-//     final user = await AuthService().signUp(
-//       _emailController.text,
-//       _passwordController.text,
-//       _nameController.text,
-//       _role,
-//     );
+      if (!mounted) return;
+      // Pop all routes and return to root - auth state listener will handle redirect
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = switch (e.code) {
+          'email-already-in-use' => 'This email is already registered.',
+          'weak-password' => 'Password is too weak. Use at least 6 characters.',
+          'invalid-email' => 'Invalid email format.',
+          _ => e.message ?? 'Sign up failed.',
+        };
+      });
+    } catch (e) {
+      setState(() => _errorMessage = 'Unexpected error occurred.');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
-//     setState(() => _loading = false);
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-//     if (user != null) {
-//       Navigator.pushReplacementNamed(context, RoutesConstants.landingRoute);
-//     } else {
-//       ScaffoldMessenger.of(
-//         context,
-//       ).showSnackBar(const SnackBar(content: Text('Sign up failed.')));
-//     }
-//   }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Sign Up'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                'Create your account',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: const Icon(Icons.person),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Full name is required';
+                  }
+                  return null;
+                },
+              ),
+              
+              const SizedBox(height: 16),
+              
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: const Icon(Icons.email),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Email is required';
+                  }
+                  if (!ValidationConstants.emailRegex.hasMatch(value)) {
+                    return 'Invalid email format';
+                  }
+                  return null;
+                },
+              ),
+              
+              const SizedBox(height: 16),
+              
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Password is required';
+                  }
+                  if (value.length < ValidationConstants.minPasswordLength) {
+                    return 'Password must be at least ${ValidationConstants.minPasswordLength} characters';
+                  }
+                  return null;
+                },
+              ),
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Sign Up')),
-//       body: _loading
-//           ? const Center(child: CircularProgressIndicator())
-//           : Padding(
-//               padding: const EdgeInsets.all(16.0),
-//               child: Form(
-//                 key: _formKey,
-//                 child: Column(
-//                   children: [
-//                     TextFormField(
-//                       controller: _nameController,
-//                       decoration: const InputDecoration(labelText: 'Name'),
-//                       validator: (value) =>
-//                           value!.isEmpty ? 'Enter your name' : null,
-//                     ),
-//                     TextFormField(
-//                       controller: _emailController,
-//                       decoration: const InputDecoration(labelText: 'Email'),
-//                       validator: (value) =>
-//                           value!.contains('@') ? null : 'Enter valid email',
-//                     ),
-//                     TextFormField(
-//                       controller: _passwordController,
-//                       decoration: const InputDecoration(labelText: 'Password'),
-//                       obscureText: true,
-//                       validator: (value) =>
-//                           value!.length < 6 ? 'Minimum 6 characters' : null,
-//                     ),
-//                     const SizedBox(height: 16),
-//                     DropdownButtonFormField<String>(
-//                       value: _role,
-//                       items: const [
-//                         DropdownMenuItem(
-//                           value: 'customer',
-//                           child: Text('Customer'),
-//                         ),
-//                         DropdownMenuItem(
-//                           value: 'vendor',
-//                           child: Text('Vendor'),
-//                         ),
-//                       ],
-//                       onChanged: (val) => setState(() => _role = val!),
-//                       decoration: const InputDecoration(labelText: 'Role'),
-//                     ),
-//                     const SizedBox(height: 24),
-//                     ElevatedButton(
-//                       onPressed: _signUp,
-//                       child: const Text('Sign Up'),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//     );
-//   }
-// }
+              const SizedBox(height: 24),
+              
+              const Text(
+                'I am a:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('Customer'),
+                      value: 'customer',
+                      groupValue: _role,
+                      onChanged: (value) => setState(() => _role = value!),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('Vendor'),
+                      value: 'vendor',
+                      groupValue: _role,
+                      onChanged: (value) => setState(() => _role = value!),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
+
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _signUp,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Sign Up', style: TextStyle(fontSize: 16)),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Already have an account? Log in'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

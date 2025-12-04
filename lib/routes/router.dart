@@ -6,8 +6,10 @@ import 'package:incanteen/pages/undefinited_page.dart';
 import 'package:incanteen/routes/routes_constants.dart';
 import 'package:incanteen/pages/auth/login_page.dart';
 import 'package:incanteen/pages/auth/signup_page.dart';
+import 'package:incanteen/pages/auth/forgot_password_page.dart';
+import 'package:incanteen/pages/vendor_dashboard.dart';
+import 'package:incanteen/pages/customer_home.dart';
 import 'package:incanteen/pages/order/place_order_page.dart';
-import 'package:incanteen/pages/test_auth_page.dart';
 
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
@@ -23,8 +25,17 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case RoutesConstants.loginRoute:
       return MaterialPageRoute(builder: (_) => const LoginPage());
 
-    // case RoutesConstants.signupRoute:
-    //   return MaterialPageRoute(builder: (_) => const SignupPage());
+    case RoutesConstants.signupRoute:
+      return MaterialPageRoute(builder: (_) => const SignupPage());
+
+    case RoutesConstants.forgotPasswordRoute:
+      return MaterialPageRoute(builder: (_) => const ForgotPasswordPage());
+
+    case RoutesConstants.vendorDashboardRoute:
+      return MaterialPageRoute(builder: (_) => const VendorDashboard());
+
+    case RoutesConstants.customerHomeRoute:
+      return MaterialPageRoute(builder: (_) => const CustomerHome());
 
     case RoutesConstants.orderPageRoute:
       final args = settings.arguments as Map<String, dynamic>?;
@@ -39,9 +50,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         builder: (_) =>
             PlaceOrderPage(vendorId: args['vendorId'], userId: args['userId']),
       );
-
-    case "/testAuth":
-      return MaterialPageRoute(builder: (_) => const TestAuthPage());
 
     default:
       return MaterialPageRoute(

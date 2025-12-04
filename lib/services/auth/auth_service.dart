@@ -1,20 +1,65 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService {
+  // Singleton pattern
+  static final AuthService _instance = AuthService._internal();
+  
+  factory AuthService() {
+    return _instance;
+  }
+  
+  AuthService._internal();
+  
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
-  Future<void> updateFcmToken(User user) async {
-    String? token = await _messaging.getToken();
-    if (token != null) {
-      await _firestore.collection('users').doc(user.uid).update({
-        'fcmToken': token,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+  /// Update FCM token if needed (only if user is logged in)
+  /// Catches and swallows non-fatal errors to avoid crashes
+  Future<void> updateFcmTokenIfNeeded(String uid) async {
+    try {
+      String? token = await _messaging.getToken();
+      if (token != null) {
+        await _firestore.collection('users').doc(uid).set({
+          'fcmToken': token,
+          'fcmUpdatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      // Swallow non-fatal errors - FCM token update failures should not crash the app
+      debugPrint('Failed to update FCM token: $e');
     }
+  }
+
+  /// Configure auth state change listener to update FCM tokens
+  void configureOnAuthChanged() {
+    _auth.authStateChanges().listen((User? user) {
+      if (user != null) {
+        updateFcmTokenIfNeeded(user.uid);
+      }
+    });
+  }
+
+  /// Get user role from Firestore
+  Future<String?> getUserRole(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return doc.data()?['role'] as String?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Failed to get user role: $e');
+      return null;
+    }
+  }
+
+  /// Send password reset email
+  Future<void> sendPasswordReset(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
   }
 
   // Rethrow FirebaseAuthException so caller can read .code/.message
@@ -24,7 +69,8 @@ class AuthService {
         email: email,
         password: password,
       );
-      await updateFcmToken(cred.user!);
+      // Update FCM token asynchronously without blocking
+      updateFcmTokenIfNeeded(cred.user!.uid);
       return cred.user;
     } on FirebaseAuthException {
       rethrow; // propagate to caller
@@ -37,11 +83,9 @@ class AuthService {
   Future<User?> signUp(
     String email,
     String password,
-    String name,
+    String displayName,
     String role, {
-    String? businessName,
-    String? businessAddress,
-    String? phone,
+    Map<String, dynamic>? extraMetadata,
   }) async {
     try {
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
@@ -49,23 +93,26 @@ class AuthService {
         password: password,
       );
 
+      // Update display name on Firebase Auth user
+      await cred.user!.updateDisplayName(displayName);
+
       final userDoc = {
-        'name': name,
+        'displayName': displayName,
         'email': email,
         'role': role,
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-      if (role == 'vendor') {
-        userDoc.addAll({
-          'businessName': businessName ?? '',
-          'businessAddress': businessAddress ?? '',
-          'phone': phone ?? '',
-        });
+      // Merge extra metadata if provided
+      if (extraMetadata != null) {
+        userDoc.addAll(extraMetadata);
       }
 
       await _firestore.collection('users').doc(cred.user!.uid).set(userDoc);
-      await updateFcmToken(cred.user!);
+      
+      // Update FCM token asynchronously without blocking
+      updateFcmTokenIfNeeded(cred.user!.uid);
+      
       return cred.user;
     } on FirebaseAuthException {
       rethrow; // important: let UI inspect .code/.message
