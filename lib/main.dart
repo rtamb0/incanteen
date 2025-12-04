@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'services/auth/auth_service.dart';
@@ -92,8 +93,12 @@ class AuthWrapper extends StatelessWidget {
               } else if (role == 'customer') {
                 return const CustomerHome();
               } else {
-                // Role not found or invalid - sign out and go to landing
-                AuthService().signOut();
+                // Role not found or invalid - sign out asynchronously
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  AuthService().signOut().catchError((error) {
+                    debugPrint('Error signing out invalid role user: $error');
+                  });
+                });
                 return const LandingPage();
               }
             },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:incanteen/services/auth/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:incanteen/constants/validation_constants.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -117,7 +118,7 @@ class _SignupPageState extends State<SignupPage> {
                   if (value == null || value.isEmpty) {
                     return 'Email is required';
                   }
-                  if (!RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(value)) {
+                  if (!ValidationConstants.emailRegex.hasMatch(value)) {
                     return 'Invalid email format';
                   }
                   return null;
@@ -140,8 +141,8 @@ class _SignupPageState extends State<SignupPage> {
                   if (value == null || value.isEmpty) {
                     return 'Password is required';
                   }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
+                  if (value.length < ValidationConstants.minPasswordLength) {
+                    return 'Password must be at least ${ValidationConstants.minPasswordLength} characters';
                   }
                   return null;
                 },

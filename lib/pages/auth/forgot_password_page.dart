@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:incanteen/services/auth/auth_service.dart';
+import 'package:incanteen/constants/validation_constants.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -102,7 +103,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   if (value == null || value.isEmpty) {
                     return 'Email is required';
                   }
-                  if (!RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$").hasMatch(value)) {
+                  if (!ValidationConstants.emailRegex.hasMatch(value)) {
                     return 'Invalid email format';
                   }
                   return null;

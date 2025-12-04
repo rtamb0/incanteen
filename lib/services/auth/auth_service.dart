@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -20,7 +21,7 @@ class AuthService {
       }
     } catch (e) {
       // Swallow non-fatal errors - FCM token update failures should not crash the app
-      print('Failed to update FCM token: $e');
+      debugPrint('Failed to update FCM token: $e');
     }
   }
 
@@ -42,7 +43,7 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print('Failed to get user role: $e');
+      debugPrint('Failed to get user role: $e');
       return null;
     }
   }
