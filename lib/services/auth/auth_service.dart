@@ -6,13 +6,13 @@ import 'package:flutter/foundation.dart';
 class AuthService {
   // Singleton pattern
   static final AuthService _instance = AuthService._internal();
-  
+
   factory AuthService() {
     return _instance;
   }
-  
+
   AuthService._internal();
-  
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
@@ -96,7 +96,9 @@ class AuthService {
       // Update display name on Firebase Auth user
       await cred.user!.updateDisplayName(displayName);
 
-      final userDoc = {
+      // Explicitly type userDoc as Map<String, dynamic> so addAll accepts
+      // Map<String, dynamic> (avoids Map<String, Object> mismatch).
+      final Map<String, dynamic> userDoc = {
         'displayName': displayName,
         'email': email,
         'role': role,
@@ -109,10 +111,10 @@ class AuthService {
       }
 
       await _firestore.collection('users').doc(cred.user!.uid).set(userDoc);
-      
+
       // Update FCM token asynchronously without blocking
       updateFcmTokenIfNeeded(cred.user!.uid);
-      
+
       return cred.user;
     } on FirebaseAuthException {
       rethrow; // important: let UI inspect .code/.message

@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'services/auth/auth_service.dart';
 import 'routes/router.dart';
-import 'routes/routes_constants.dart';
 import 'themes/themes.dart';
 import 'pages/vendor_dashboard.dart';
 import 'pages/customer_home.dart';
@@ -42,7 +40,7 @@ class _IncanteenAppState extends State<IncanteenApp> {
       title: 'InCanteen',
       theme: lightTheme,
       onGenerateRoute: generateRoute,
-      
+
       // Indonesian only
       locale: const Locale('id'),
       supportedLocales: const [Locale('id')],
@@ -51,7 +49,7 @@ class _IncanteenAppState extends State<IncanteenApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      
+
       // Use home with AuthWrapper for auth state and role-based routing
       home: const AuthWrapper(),
     );
@@ -73,7 +71,7 @@ class AuthWrapper extends StatelessWidget {
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        
+
         // User is logged in - check role and redirect
         if (snapshot.hasData && snapshot.data != null) {
           return FutureBuilder<String?>(
@@ -84,9 +82,9 @@ class AuthWrapper extends StatelessWidget {
                   body: Center(child: CircularProgressIndicator()),
                 );
               }
-              
+
               final role = roleSnapshot.data;
-              
+
               // Redirect based on role
               if (role == 'vendor') {
                 return const VendorDashboard();
@@ -104,7 +102,7 @@ class AuthWrapper extends StatelessWidget {
             },
           );
         }
-        
+
         // User is not logged in - show landing page
         return const LandingPage();
       },
