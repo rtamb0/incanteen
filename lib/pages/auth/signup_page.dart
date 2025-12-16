@@ -79,10 +79,17 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               // Back button aligned to top-left
               Align(
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.topLeft,
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("← Back"),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_back),
+                      const SizedBox(width: 8),
+                      const Text("Back"),
+                    ],
+                  ),
                 ),
               ),
               // Vertically centered form
@@ -96,7 +103,10 @@ class _SignupPageState extends State<SignupPage> {
                         children: [
                           const Text(
                             "Create your account",
-                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 20),
                           TextFormField(
@@ -127,7 +137,9 @@ class _SignupPageState extends State<SignupPage> {
                               if (value == null || value.isEmpty) {
                                 return "Email is required";
                               }
-                              if (!ValidationConstants.emailRegex.hasMatch(value)) {
+                              if (!ValidationConstants.emailRegex.hasMatch(
+                                value,
+                              )) {
                                 return "Invalid email format";
                               }
                               return null;
@@ -148,7 +160,8 @@ class _SignupPageState extends State<SignupPage> {
                               if (value == null || value.isEmpty) {
                                 return "Password is required";
                               }
-                              if (value.length < ValidationConstants.minPasswordLength) {
+                              if (value.length <
+                                  ValidationConstants.minPasswordLength) {
                                 return "Minimum ${ValidationConstants.minPasswordLength} characters";
                               }
                               return null;
@@ -159,7 +172,10 @@ class _SignupPageState extends State<SignupPage> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Register as:',
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -179,14 +195,18 @@ class _SignupPageState extends State<SignupPage> {
                                 value: 'customer',
                                 child: Text('Customer'),
                               ),
-                              DropdownMenuItem(value: 'vendor', child: Text('Vendor')),
+                              DropdownMenuItem(
+                                value: 'vendor',
+                                child: Text('Vendor'),
+                              ),
                             ],
                             onChanged: (val) {
                               if (val == null) return;
                               setState(() => _role = val);
                             },
-                            validator: (v) =>
-                                (v == null || v.isEmpty) ? 'Choose a role' : null,
+                            validator: (v) => (v == null || v.isEmpty)
+                                ? 'Choose a role'
+                                : null,
                           ),
                           if (_errorMessage != null)
                             Padding(
@@ -202,14 +222,21 @@ class _SignupPageState extends State<SignupPage> {
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _submit,
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               child: _isLoading
-                                  ? const CircularProgressIndicator(color: Colors.white)
-                                  : const Text("Create account", style: TextStyle(fontSize: 16)),
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      "Create account",
+                                      style: TextStyle(fontSize: 16),
+                                    ),
                             ),
                           ),
                           TextButton(
@@ -217,7 +244,9 @@ class _SignupPageState extends State<SignupPage> {
                               context,
                               RoutesConstants.loginRoute,
                             ),
-                            child: const Text("Already have an account? Log in"),
+                            child: const Text(
+                              "Already have an account? Log in",
+                            ),
                           ),
                         ],
                       ),

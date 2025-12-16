@@ -72,7 +72,14 @@ class _LoginPageState extends State<LoginPage> {
                 alignment: Alignment.topLeft,
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Back"),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_back),
+                      const SizedBox(width: 8),
+                      const Text("Back"),
+                    ],
+                  ),
                 ),
               ),
 
