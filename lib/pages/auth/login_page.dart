@@ -64,87 +64,118 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
+        child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Log in to your account",
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  prefixIcon: const Icon(Icons.email),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              Align(
+                alignment: Alignment.topLeft,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Back"),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Email is required";
-                  }
-                  if (!ValidationConstants.emailRegex.hasMatch(value)) {
-                    return "Invalid email format";
-                  }
-                  return null;
-                },
               ),
 
-              const SizedBox(height: 14),
-
-              TextFormField(
-                controller: _password,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  prefixIcon: const Icon(Icons.lock),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                validator: (value) => value != null && value.length < ValidationConstants.minPasswordLength
-                    ? "Minimum ${ValidationConstants.minPasswordLength} characters"
-                    : null,
-              ),
-
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            "Log in to your account",
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              labelText: "Email",
+                              prefixIcon: const Icon(Icons.email),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Email is required";
+                              }
+                              if (!ValidationConstants.emailRegex.hasMatch(
+                                value,
+                              )) {
+                                return "Invalid email format";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _password,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: "Password",
+                              prefixIcon: const Icon(Icons.lock),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) =>
+                                value != null &&
+                                    value.length <
+                                        ValidationConstants.minPasswordLength
+                                ? "Minimum ${ValidationConstants.minPasswordLength} characters"
+                                : null,
+                          ),
+                          if (_errorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      "Login",
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              RoutesConstants.forgotPasswordRoute,
+                            ),
+                            child: const Text("Forgot password?"),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Login", style: TextStyle(fontSize: 16)),
                 ),
-              ),
-
-              TextButton(
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  RoutesConstants.forgotPasswordRoute,
-                ),
-                child: const Text("Forgot password?"),
               ),
             ],
           ),
