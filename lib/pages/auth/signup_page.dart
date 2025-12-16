@@ -144,9 +144,15 @@ class _SignupPageState extends State<SignupPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            validator: (value) => value != null && value.length < ValidationConstants.minPasswordLength
-                                ? "Minimum ${ValidationConstants.minPasswordLength} characters"
-                                : null,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Password is required";
+                              }
+                              if (value.length < ValidationConstants.minPasswordLength) {
+                                return "Minimum ${ValidationConstants.minPasswordLength} characters";
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 14),
                           const Align(
