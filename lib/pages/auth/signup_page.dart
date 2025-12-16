@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:incanteen/services/auth/auth_service.dart';
+import 'package:incanteen/routes/routes_constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:incanteen/constants/validation_constants.dart';
 
 class SignupPage extends StatefulWidget {
   // Use super.key to satisfy the use_super_parameters lint/info.
@@ -16,7 +20,8 @@ class _SignupPageState extends State<SignupPage> {
 
   // Role selection
   String _role = 'customer';
-  bool _loading = false;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -28,89 +33,193 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
-      // submit logic...
+      await AuthService().signUp(
+        _emailCtl.text.trim(),
+        _passCtl.text.trim(),
+        _nameCtl.text.trim(),
+        _role,
+      );
+
+      if (!mounted) return;
+      // Pop all routes and return to root - auth state listener will handle redirect
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _errorMessage = switch (e.code) {
+          'invalid-email' => "Invalid email format.",
+          'email-already-in-use' => "Email is already registered.",
+          'weak-password' => "Password is too weak.",
+          _ => e.message ?? "Sign up failed.",
+        };
+      });
+    } catch (e) {
+      setState(() => _errorMessage = "Unexpected error occurred.");
     } finally {
-      if (mounted) setState(() => _loading = false);
+      // Prevent calling setState after unmount
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign up')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              children: [
-                TextFormField(
-                  controller: _nameCtl,
-                  decoration: const InputDecoration(labelText: 'Full name'),
-                  validator: (v) => (v != null && v.trim().isNotEmpty)
-                      ? null
-                      : 'Enter your name',
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              // Back button aligned to top-left
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("← Back"),
                 ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _emailCtl,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  validator: (v) =>
-                      (v != null && v.contains('@')) ? null : 'Enter email',
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _passCtl,
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  obscureText: true,
-                  validator: (v) =>
-                      (v != null && v.length >= 6) ? null : 'Min 6 chars',
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Register as:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-
-                // Use initialValue instead of deprecated 'value' property.
-                DropdownButtonFormField<String>(
-                  initialValue: _role,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+              ),
+              // Vertically centered form
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            "Create your account",
+                            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _nameCtl,
+                            decoration: InputDecoration(
+                              labelText: "Full name",
+                              prefixIcon: const Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (v) => (v != null && v.trim().isNotEmpty)
+                                ? null
+                                : 'Enter your name',
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _emailCtl,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              labelText: "Email",
+                              prefixIcon: const Icon(Icons.email),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Email is required";
+                              }
+                              if (!ValidationConstants.emailRegex.hasMatch(value)) {
+                                return "Invalid email format";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _passCtl,
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              labelText: "Password",
+                              prefixIcon: const Icon(Icons.lock),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) => value != null && value.length < ValidationConstants.minPasswordLength
+                                ? "Minimum ${ValidationConstants.minPasswordLength} characters"
+                                : null,
+                          ),
+                          const SizedBox(height: 14),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Register as:',
+                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _role,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 16,
+                              ),
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'customer',
+                                child: Text('Customer'),
+                              ),
+                              DropdownMenuItem(value: 'vendor', child: Text('Vendor')),
+                            ],
+                            onChanged: (val) {
+                              if (val == null) return;
+                              setState(() => _role = val);
+                            },
+                            validator: (v) =>
+                                (v == null || v.isEmpty) ? 'Choose a role' : null,
+                          ),
+                          if (_errorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _submit,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text("Create account", style: TextStyle(fontSize: 16)),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pushNamed(
+                              context,
+                              RoutesConstants.loginRoute,
+                            ),
+                            child: const Text("Already have an account? Log in"),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'customer',
-                      child: Text('Customer'),
-                    ),
-                    DropdownMenuItem(value: 'vendor', child: Text('Vendor')),
-                  ],
-                  onChanged: (val) {
-                    if (val == null) return;
-                    setState(() => _role = val);
-                  },
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Choose a role' : null,
                 ),
-
-                const SizedBox(height: 16),
-                if (_loading)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  ElevatedButton(
-                    onPressed: _submit,
-                    child: const Text('Create account'),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
