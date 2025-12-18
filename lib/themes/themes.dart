@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:incanteen/constants/style/style_constants.dart';
 
-/// Builds the light theme for the application using Material 3 design.
+/// Builds the app theme using Material 3 design.
 /// 
 /// This function centralizes all theme configuration and uses ColorScheme.fromSeed
 /// to ensure consistent color relationships throughout the app.
-ThemeData buildLightTheme() {
+ThemeData buildAppTheme() {
   return ThemeData(
     useMaterial3: true,
     

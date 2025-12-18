@@ -6,14 +6,14 @@ import 'package:incanteen/themes/themes.dart';
 /// This notifier allows runtime theme updates and supports hot-reload behavior.
 /// Widgets can listen to theme changes using Provider.of<ThemeNotifier>(context).
 class ThemeNotifier extends ChangeNotifier {
-  ThemeData _themeData = buildLightTheme();
+  ThemeData _themeData = buildAppTheme();
 
   /// Returns the current theme data.
   ThemeData get themeData => _themeData;
 
-  /// Sets the theme to the default light theme.
-  void setLightTheme() {
-    _themeData = buildLightTheme();
+  /// Sets the theme to the default app theme.
+  void setAppTheme() {
+    _themeData = buildAppTheme();
     notifyListeners();
   }
 
