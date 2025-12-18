@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:incanteen/constants/style/style_constants.dart';
 
-final ThemeData lightTheme = ThemeData(
+final ThemeData appTheme = ThemeData(
   useMaterial3: true,
   
   // ColorScheme from seed for Material 3 compatibility
