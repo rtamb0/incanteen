@@ -38,7 +38,7 @@ class _IncanteenAppState extends State<IncanteenApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'InCanteen',
-      theme: lightTheme,
+      theme: appTheme,
       onGenerateRoute: generateRoute,
 
       // Indonesian only
