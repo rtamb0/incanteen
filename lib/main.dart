@@ -40,9 +40,18 @@ class _IncanteenAppState extends State<IncanteenApp> {
   }
 
   @override
+  void reassemble() {
+    super.reassemble();
+    // Force the theme notifier to rebuild ThemeData from current StyleConstants
+    final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
+    themeNotifier.setAppTheme();
+    // Alternatively: setState(() {}); // if you're not using a notifier
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
-    
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'InCanteen',
