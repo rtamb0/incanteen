@@ -12,7 +12,7 @@ class StarterApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'InCanteen',
-      theme: lightTheme,
+      theme: appTheme,
       initialRoute: RoutesConstants.splashScreenRoute,
       onGenerateRoute: generateRoute,
 
