@@ -15,11 +15,10 @@ class LandingPage extends StatelessWidget {
         toolbarHeight: size.height * 0.1,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           "InCanteen",
-          style: TextStyle(
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             fontSize: 40,
-            color: StyleConstants.colorTitle,
             fontWeight: FontWeight.bold,
           ),
         ),
