@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'services/auth/auth_service.dart';
 import 'routes/router.dart';
-import 'themes/themes.dart';
+import 'providers/theme_notifier.dart';
 import 'pages/vendor_dashboard.dart';
 import 'pages/customer_home.dart';
 import 'pages/landing_page.dart';
@@ -15,7 +16,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   NotificationService.setupFcmListener();
-  runApp(const IncanteenApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: const IncanteenApp(),
+    ),
+  );
 }
 
 class IncanteenApp extends StatefulWidget {
@@ -35,10 +41,12 @@ class _IncanteenAppState extends State<IncanteenApp> {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'InCanteen',
-      theme: appTheme,
+      theme: themeNotifier.themeData,
       onGenerateRoute: generateRoute,
 
       // Indonesian only

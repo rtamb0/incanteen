@@ -1,53 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:incanteen/constants/style/style_constants.dart';
 
-final ThemeData appTheme = ThemeData(
-  useMaterial3: true,
-  
-  // ColorScheme from seed for Material 3 compatibility
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: StyleConstants.colorOfApp,
-    brightness: Brightness.light,
-  ),
-  
-  // Legacy compatibility
-  primaryColor: StyleConstants.colorOfApp,
-  scaffoldBackgroundColor: StyleConstants.scaffoldBackgroundColor,
-  
-  // Text theme with colorTitle for body and display colors
-  textTheme: const TextTheme(
-    bodyLarge: TextStyle(color: StyleConstants.colorTitle),
-    bodyMedium: TextStyle(color: StyleConstants.colorTitle),
-    bodySmall: TextStyle(color: StyleConstants.colorTitle),
-    displayLarge: TextStyle(color: StyleConstants.colorTitle),
-    displayMedium: TextStyle(color: StyleConstants.colorTitle),
-    displaySmall: TextStyle(color: StyleConstants.colorTitle),
-  ),
-  
-  // TextButton theme
-  textButtonTheme: TextButtonThemeData(
-    style: TextButton.styleFrom(
-      foregroundColor: StyleConstants.colorOfApp,
+/// Builds the app theme using Material 3 design.
+/// 
+/// This function centralizes all theme configuration and uses ColorScheme.fromSeed
+/// to ensure consistent color relationships throughout the app.
+ThemeData buildAppTheme() {
+  return ThemeData(
+    useMaterial3: true,
+    
+    // ColorScheme from seed for Material 3 compatibility
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: StyleConstants.colorOfApp,
+      brightness: Brightness.light,
     ),
-  ),
-  
-  // ElevatedButton theme
-  elevatedButtonTheme: ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: StyleConstants.colorOfApp,
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+    
+    // Legacy compatibility
+    primaryColor: StyleConstants.colorOfApp,
+    scaffoldBackgroundColor: StyleConstants.scaffoldBackgroundColor,
+    
+    // Text theme using Typography.material2021 with colorTitle applied
+    textTheme: Typography.material2021().black.apply(
+      displayColor: StyleConstants.colorTitle,
+      bodyColor: StyleConstants.colorTitle,
+    ),
+    
+    // TextButton theme
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: StyleConstants.colorOfApp,
       ),
     ),
-  ),
-  
-  // OutlinedButton theme
-  outlinedButtonTheme: OutlinedButtonThemeData(
-    style: OutlinedButton.styleFrom(
-      foregroundColor: StyleConstants.colorOfApp,
-      side: const BorderSide(color: StyleConstants.colorOfApp),
+    
+    // ElevatedButton theme
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: StyleConstants.colorOfApp,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
     ),
-  ),
-);
+    
+    // OutlinedButton theme
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: StyleConstants.colorOfApp,
+        side: const BorderSide(color: StyleConstants.colorOfApp),
+      ),
+    ),
+  );
+}
