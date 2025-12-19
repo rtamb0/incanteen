@@ -14,9 +14,14 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameCtl = TextEditingController();
+  final _firstNameCtl = TextEditingController();
+  final _lastNameCtl = TextEditingController();
   final _emailCtl = TextEditingController();
   final _passCtl = TextEditingController();
+
+  // Vendor-specific controllers
+  final _shopNameCtl = TextEditingController();
+  final _shopAddressCtl = TextEditingController();
 
   // Role selection
   String _role = 'customer';
@@ -25,9 +30,12 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   void dispose() {
-    _nameCtl.dispose();
+    _firstNameCtl.dispose();
+    _lastNameCtl.dispose();
     _emailCtl.dispose();
     _passCtl.dispose();
+    _shopNameCtl.dispose();
+    _shopAddressCtl.dispose();
     super.dispose();
   }
 
@@ -40,16 +48,28 @@ class _SignupPageState extends State<SignupPage> {
     });
 
     try {
+      // Collect vendor-specific data if needed
+      final vendorData = _role == 'vendor'
+          ? {
+              'shopName': _shopNameCtl.text.trim(),
+              'shopAddress': _shopAddressCtl.text.trim(),
+            }
+          : null;
+
+      // TODO: adapt AuthService.signUp to accept vendor metadata (if required)
       await AuthService().signUp(
         _emailCtl.text.trim(),
         _passCtl.text.trim(),
-        _nameCtl.text.trim(),
+        '${_firstNameCtl.text.trim()} ${_lastNameCtl.text.trim()}',
         _role,
       );
 
       if (!mounted) return;
       // Pop all routes and return to root - auth state listener will handle redirect
       Navigator.popUntil(context, (route) => route.isFirst);
+
+      // If you need to save vendorData to Firestore / your DB, do that here or in a server-side flow.
+      // e.g. if (vendorData != null) await DatabaseService.createVendorProfile(userId, vendorData);
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = switch (e.code) {
@@ -110,9 +130,9 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           const SizedBox(height: 20),
                           TextFormField(
-                            controller: _nameCtl,
+                            controller: _firstNameCtl,
                             decoration: InputDecoration(
-                              labelText: "Full name",
+                              labelText: "First name",
                               prefixIcon: const Icon(Icons.person),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -120,7 +140,21 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             validator: (v) => (v != null && v.trim().isNotEmpty)
                                 ? null
-                                : 'Enter your name',
+                                : 'Enter your first name',
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _lastNameCtl,
+                            decoration: InputDecoration(
+                              labelText: "Last name",
+                              prefixIcon: const Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (v) => (v != null && v.trim().isNotEmpty)
+                                ? null
+                                : 'Enter your last name',
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
@@ -208,6 +242,64 @@ class _SignupPageState extends State<SignupPage> {
                                 ? 'Choose a role'
                                 : null,
                           ),
+
+                          // AnimatedSwitcher shows/hides vendor-only fields when role changes.
+                          const SizedBox(height: 12),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            switchInCurve: Curves.easeIn,
+                            switchOutCurve: Curves.easeOut,
+                            child: _role == 'vendor'
+                                ? Column(
+                                    key: const ValueKey('vendorFields'),
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      TextFormField(
+                                        controller: _shopNameCtl,
+                                        decoration: InputDecoration(
+                                          labelText: "Shop name",
+                                          prefixIcon: const Icon(
+                                            Icons.storefront,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        validator: (v) {
+                                          if (_role != 'vendor') return null;
+                                          if (v == null || v.trim().isEmpty) {
+                                            return 'Enter shop name';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      const SizedBox(height: 12),
+                                      TextFormField(
+                                        controller: _shopAddressCtl,
+                                        decoration: InputDecoration(
+                                          labelText: "Shop address (optional)",
+                                          prefixIcon: const Icon(
+                                            Icons.location_on,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        // optional field: no validator
+                                      ),
+                                      const SizedBox(height: 12),
+                                    ],
+                                  )
+                                : const SizedBox.shrink(
+                                    key: ValueKey('noVendorFields'),
+                                  ),
+                          ),
+
                           if (_errorMessage != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 12),
