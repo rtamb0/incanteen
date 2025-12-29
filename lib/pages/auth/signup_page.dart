@@ -18,10 +18,11 @@ class _SignupPageState extends State<SignupPage> {
   final _lastNameCtl = TextEditingController();
   final _emailCtl = TextEditingController();
   final _passCtl = TextEditingController();
+  final _phoneCtl = TextEditingController();
 
   // Vendor-specific controllers
-  final _shopNameCtl = TextEditingController();
-  final _shopAddressCtl = TextEditingController();
+  final _businessNameCtl = TextEditingController();
+  final _businessAddressCtl = TextEditingController();
 
   // Role selection
   String _role = 'customer';
@@ -34,8 +35,9 @@ class _SignupPageState extends State<SignupPage> {
     _lastNameCtl.dispose();
     _emailCtl.dispose();
     _passCtl.dispose();
-    _shopNameCtl.dispose();
-    _shopAddressCtl.dispose();
+    _phoneCtl.dispose();
+    _businessNameCtl.dispose();
+    _businessAddressCtl.dispose();
     super.dispose();
   }
 
@@ -51,8 +53,8 @@ class _SignupPageState extends State<SignupPage> {
       // Collect vendor-specific data if needed
       final vendorData = _role == 'vendor'
           ? {
-              'shopName': _shopNameCtl.text.trim(),
-              'shopAddress': _shopAddressCtl.text.trim(),
+              'businessName': _businessNameCtl.text.trim(),
+              'businessAddress': _businessAddressCtl.text.trim(),
             }
           : null;
 
@@ -62,6 +64,7 @@ class _SignupPageState extends State<SignupPage> {
         _passCtl.text.trim(),
         '${_firstNameCtl.text.trim()} ${_lastNameCtl.text.trim()}',
         _role,
+        extraMetadata: vendorData,
       );
 
       if (!mounted) return;
@@ -202,6 +205,28 @@ class _SignupPageState extends State<SignupPage> {
                             },
                           ),
                           const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _phoneCtl,
+                            keyboardType: TextInputType.phone,
+                            decoration: InputDecoration(
+                              labelText: "Phone",
+                              prefixIcon: const Icon(Icons.phone),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Password is required";
+                              }
+                              if (value.length <
+                                  ValidationConstants.minPhoneNumberLength) {
+                                return "Minimum ${ValidationConstants.minPhoneNumberLength} digits";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
@@ -256,9 +281,9 @@ class _SignupPageState extends State<SignupPage> {
                                         CrossAxisAlignment.stretch,
                                     children: [
                                       TextFormField(
-                                        controller: _shopNameCtl,
+                                        controller: _businessNameCtl,
                                         decoration: InputDecoration(
-                                          labelText: "Shop name",
+                                          labelText: "Business name",
                                           prefixIcon: const Icon(
                                             Icons.storefront,
                                           ),
@@ -278,9 +303,9 @@ class _SignupPageState extends State<SignupPage> {
                                       ),
                                       const SizedBox(height: 12),
                                       TextFormField(
-                                        controller: _shopAddressCtl,
+                                        controller: _businessAddressCtl,
                                         decoration: InputDecoration(
-                                          labelText: "Shop address (optional)",
+                                          labelText: "Business address",
                                           prefixIcon: const Icon(
                                             Icons.location_on,
                                           ),
@@ -290,6 +315,13 @@ class _SignupPageState extends State<SignupPage> {
                                             ),
                                           ),
                                         ),
+                                        validator: (v) {
+                                          if (_role != 'vendor') return null;
+                                          if (v == null || v.trim().isEmpty) {
+                                            return 'Enter shop address';
+                                          }
+                                          return null;
+                                        },
                                         // optional field: no validator
                                       ),
                                       const SizedBox(height: 12),
