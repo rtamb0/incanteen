@@ -74,8 +74,19 @@ class _IncanteenAppState extends State<IncanteenApp> {
 }
 
 /// Wrapper widget that handles initial routing based on auth state
-class AuthWrapper extends StatelessWidget {
+/// Converted to Stateful so we can implement a clean retry mechanism (no reassemble).
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  // Increment to force FutureBuilder to refetch the future when retrying.
+  int _retryKey = 0;
+
+  void _retry() => setState(() => _retryKey++);
 
   @override
   Widget build(BuildContext context) {
@@ -91,8 +102,12 @@ class AuthWrapper extends StatelessWidget {
 
         // User is logged in - check role and redirect
         if (snapshot.hasData && snapshot.data != null) {
+          final uid = snapshot.data!.uid;
+
           return FutureBuilder<String?>(
-            future: AuthService().getUserRole(snapshot.data!.uid),
+            // Use a ValueKey driven by _retryKey to force a rebuild/fresh future when retry is pressed.
+            key: ValueKey(_retryKey),
+            future: AuthService().getUserRole(uid, throwOnError: true),
             builder: (context, roleSnapshot) {
               if (roleSnapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
@@ -100,21 +115,90 @@ class AuthWrapper extends StatelessWidget {
                 );
               }
 
+              // Helper: determine if this user is likely a newly created account
+              final user = snapshot.data!;
+              bool isLikelyNewUser() {
+                final c = user.metadata.creationTime;
+                final l = user.metadata.lastSignInTime;
+                if (c == null || l == null) return false;
+                // If creation and lastSignIn are equal or within a small tolerance, treat as new
+                final diffSeconds = c.difference(l).inSeconds.abs();
+                if (diffSeconds <= 5) return true;
+                // Also treat as new if account was created very recently (clock skew tolerant)
+                final sinceCreation = DateTime.now().difference(c).inSeconds;
+                if (sinceCreation >= 0 && sinceCreation <= 60) return true;
+                return false;
+              }
+
+              final newUser = isLikelyNewUser();
+
+              // If Firestore returned an error when fetching role
+              if (roleSnapshot.hasError) {
+                debugPrint(
+                  'Failed to load user role for ${user.uid}: ${roleSnapshot.error}',
+                );
+
+                if (newUser) {
+                  // For freshly created users: don't auto-sign-out. Show landing/profile flow and a retry.
+                  return Scaffold(
+                    body: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Finishing account setup...'),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: _retry,
+                            child: const Text('Retry'),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () {
+                              // Let the user explicitly sign out if they want
+                              AuthService().signOut().catchError(
+                                (e) => debugPrint(e.toString()),
+                              );
+                            },
+                            child: const Text('Sign out'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                } else {
+                  // For existing users: treat permission/role errors as fatal and sign them out
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    AuthService().signOut().catchError((error) {
+                      debugPrint('Error signing out (role read error): $error');
+                    });
+                  });
+                  return const LandingPage();
+                }
+              }
+
+              // No error — examine the role value
               final role = roleSnapshot.data;
 
-              // Redirect based on role
               if (role == 'vendor') {
                 return const VendorDashboard();
               } else if (role == 'customer') {
                 return const CustomerHome();
               } else {
-                // Role not found or invalid - sign out asynchronously
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  AuthService().signOut().catchError((error) {
-                    debugPrint('Error signing out invalid role user: $error');
+                // Role is missing (null/empty) — could be new user or a problem for an existing user
+                if (newUser) {
+                  // New user: don't sign out; let them continue to LandingPage/profile completion
+                  return const LandingPage();
+                } else {
+                  // Existing user without role: sign out automatically
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    AuthService().signOut().catchError((error) {
+                      debugPrint(
+                        'Error signing out user with missing role: $error',
+                      );
+                    });
                   });
-                });
-                return const LandingPage();
+                  return const LandingPage();
+                }
               }
             },
           );
