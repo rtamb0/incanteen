@@ -184,6 +184,28 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
+                            controller: _phoneCtl,
+                            keyboardType: TextInputType.phone,
+                            decoration: InputDecoration(
+                              labelText: "Phone",
+                              prefixIcon: const Icon(Icons.phone),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Phone number is required";
+                              }
+                              if (value.length <
+                                  ValidationConstants.minPhoneNumberLength) {
+                                return "Minimum ${ValidationConstants.minPhoneNumberLength} digits";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
                             controller: _passCtl,
                             obscureText: true,
                             decoration: InputDecoration(
@@ -200,28 +222,6 @@ class _SignupPageState extends State<SignupPage> {
                               if (value.length <
                                   ValidationConstants.minPasswordLength) {
                                 return "Minimum ${ValidationConstants.minPasswordLength} characters";
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 14),
-                          TextFormField(
-                            controller: _phoneCtl,
-                            keyboardType: TextInputType.phone,
-                            decoration: InputDecoration(
-                              labelText: "Phone",
-                              prefixIcon: const Icon(Icons.phone),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return "Password is required";
-                              }
-                              if (value.length <
-                                  ValidationConstants.minPhoneNumberLength) {
-                                return "Minimum ${ValidationConstants.minPhoneNumberLength} digits";
                               }
                               return null;
                             },
@@ -296,7 +296,7 @@ class _SignupPageState extends State<SignupPage> {
                                         validator: (v) {
                                           if (_role != 'vendor') return null;
                                           if (v == null || v.trim().isEmpty) {
-                                            return 'Enter shop name';
+                                            return 'Enter business name';
                                           }
                                           return null;
                                         },
@@ -318,7 +318,7 @@ class _SignupPageState extends State<SignupPage> {
                                         validator: (v) {
                                           if (_role != 'vendor') return null;
                                           if (v == null || v.trim().isEmpty) {
-                                            return 'Enter shop address';
+                                            return 'Enter business address';
                                           }
                                           return null;
                                         },
