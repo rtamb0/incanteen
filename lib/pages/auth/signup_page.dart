@@ -18,6 +18,7 @@ class _SignupPageState extends State<SignupPage> {
   final _lastNameCtl = TextEditingController();
   final _emailCtl = TextEditingController();
   final _passCtl = TextEditingController();
+  final _confirmPassCtl = TextEditingController();
   final _phoneCtl = TextEditingController();
 
   // Vendor-specific controllers
@@ -37,6 +38,7 @@ class _SignupPageState extends State<SignupPage> {
     _lastNameCtl.dispose();
     _emailCtl.dispose();
     _passCtl.dispose();
+    _confirmPassCtl.dispose();
     _phoneCtl.dispose();
     _businessNameCtl.dispose();
     _businessAddressCtl.dispose();
@@ -84,9 +86,7 @@ class _SignupPageState extends State<SignupPage> {
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = switch (e.code) {
-          'invalid-email' => "Invalid email format.",
           'email-already-in-use' => "Email is already registered.",
-          'weak-password' => "Password is too weak.",
           _ => e.message ?? "Sign up failed.",
         };
       });
@@ -216,11 +216,13 @@ class _SignupPageState extends State<SignupPage> {
                             },
                           ),
                           const SizedBox(height: 14),
+                          PasswordField(passCtl: _passCtl),
+                          const SizedBox(height: 14),
                           TextFormField(
-                            controller: _passCtl,
+                            controller: _confirmPassCtl,
                             obscureText: true,
                             decoration: InputDecoration(
-                              labelText: "Password",
+                              labelText: "Confirm Password",
                               prefixIcon: const Icon(Icons.lock),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -228,11 +230,10 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return "Password is required";
+                                return "Confirm password is required";
                               }
-                              if (value.length <
-                                  ValidationConstants.minPasswordLength) {
-                                return "Minimum ${ValidationConstants.minPasswordLength} characters";
+                              if (value != _passCtl.text) {
+                                return "Passwords do not match";
                               }
                               return null;
                             },
@@ -393,6 +394,49 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class PasswordField extends StatefulWidget {
+  const PasswordField({super.key, required TextEditingController passCtl})
+    : _passCtl = passCtl;
+
+  final TextEditingController _passCtl;
+
+  @override
+  State<PasswordField> createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<PasswordField> {
+  bool _obscureText = true;
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: widget._passCtl,
+      obscureText: _obscureText,
+      decoration: InputDecoration(
+        labelText: "Password",
+        prefixIcon: const Icon(Icons.lock),
+        suffixIcon: IconButton(
+          icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
+          onPressed: () {
+            setState(() {
+              _obscureText = !_obscureText;
+            });
+          },
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return "Password is required";
+        }
+        if (value.length < ValidationConstants.minPasswordLength) {
+          return "Minimum ${ValidationConstants.minPasswordLength} characters";
+        }
+        return null;
+      },
     );
   }
 }
