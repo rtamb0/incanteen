@@ -29,6 +29,8 @@ class _SignupPageState extends State<SignupPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  bool _autoValidate = false;
+
   @override
   void dispose() {
     _firstNameCtl.dispose();
@@ -42,7 +44,13 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final isValid = _formKey.currentState!.validate();
+    if (!isValid) {
+      setState(() {
+        _autoValidate = true;
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -121,6 +129,9 @@ class _SignupPageState extends State<SignupPage> {
                   child: SingleChildScrollView(
                     child: Form(
                       key: _formKey,
+                      autovalidateMode: _autoValidate
+                          ? AutovalidateMode.always
+                          : AutovalidateMode.disabled,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
