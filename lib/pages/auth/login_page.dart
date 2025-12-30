@@ -13,14 +13,22 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _email = TextEditingController();
-  final TextEditingController _password = TextEditingController();
+  final TextEditingController _emailCtl = TextEditingController();
+  final TextEditingController _passwordCtl = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
 
+  bool _autoValidate = false;
+
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+    final isValid = _formKey.currentState!.validate();
+    if (!isValid) {
+      setState(() {
+        _autoValidate = true;
+      });
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -28,7 +36,10 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await AuthService().signIn(_email.text.trim(), _password.text.trim());
+      await AuthService().signIn(
+        _emailCtl.text.trim(),
+        _passwordCtl.text.trim(),
+      );
 
       if (!mounted) return;
       // Pop all routes and return to root - auth state listener will handle redirect
@@ -36,10 +47,8 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = switch (e.code) {
-          'invalid-email' => "Invalid email format.",
-          'user-not-found' => "No account found for this email.",
-          'wrong-password' => "Incorrect password.",
-          _ => e.message ?? "Authentication failed.",
+          'invalid-credential' => "Incorrect email or password.",
+          _ => e.message ?? "Login failed.",
         };
       });
     } catch (e) {
@@ -54,8 +63,8 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _email.dispose();
-    _password.dispose();
+    _emailCtl.dispose();
+    _passwordCtl.dispose();
     super.dispose();
   }
 
@@ -88,6 +97,9 @@ class _LoginPageState extends State<LoginPage> {
                   child: SingleChildScrollView(
                     child: Form(
                       key: _formKey,
+                      autovalidateMode: _autoValidate
+                          ? AutovalidateMode.always
+                          : AutovalidateMode.disabled,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -101,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 20),
                           TextFormField(
-                            controller: _email,
+                            controller: _emailCtl,
                             keyboardType: TextInputType.emailAddress,
                             decoration: InputDecoration(
                               labelText: "Email",
@@ -124,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 14),
                           TextFormField(
-                            controller: _password,
+                            controller: _passwordCtl,
                             obscureText: true,
                             decoration: InputDecoration(
                               labelText: "Password",
