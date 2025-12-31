@@ -26,13 +26,6 @@ class CustomerHome extends StatelessWidget {
       appBar: AppBar(
         title: const Text('InCanteen'),
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _signOut(context),
-            tooltip: 'Sign Out',
-          ),
-        ],
       ),
       body: Center(
         child: Padding(
