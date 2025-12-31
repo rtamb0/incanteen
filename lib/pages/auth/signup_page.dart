@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:incanteen/services/auth/auth_service.dart';
 import 'package:incanteen/routes/routes_constants.dart';
@@ -32,8 +35,12 @@ class _SignupPageState extends State<SignupPage> {
 
   bool _autoValidate = false;
 
+  StreamSubscription<User?>? _authSub;
+  bool _waitingForRole = false;
+
   @override
   void dispose() {
+    _authSub?.cancel();
     _firstNameCtl.dispose();
     _lastNameCtl.dispose();
     _emailCtl.dispose();
@@ -43,6 +50,107 @@ class _SignupPageState extends State<SignupPage> {
     _businessNameCtl.dispose();
     _businessAddressCtl.dispose();
     super.dispose();
+  }
+
+  /// Waits for the auth state to include [expectedUid], then retries fetching the user's
+  /// role until it succeeds (or until timeout). When role fetch completes (either with a
+  /// role or a null result), the method will pop to root so AuthWrapper can perform routing.
+  void _waitForAuthAndRoleThenPop({String? expectedUid}) {
+    // Cancel any previous subscription
+    _authSub?.cancel();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user == null) {
+        if (kDebugMode) debugPrint('Signup.wait: observed authState null');
+        return;
+      }
+      if (kDebugMode)
+        debugPrint(
+          'Signup.wait: observed authState uid=${user.uid} (expectedUid=$expectedUid)',
+        );
+
+      if (expectedUid != null && user.uid != expectedUid) {
+        if (kDebugMode)
+          debugPrint(
+            'Signup.wait: uid mismatch; ignoring until expected user signs in',
+          );
+        return;
+      }
+
+      // We've observed the expected auth user. Now attempt to resolve role.
+      _authSub?.pause();
+      _waitingForRole = true;
+
+      final uid = user.uid;
+      const retryDelay = Duration(milliseconds: 500);
+      final deadline = DateTime.now().add(const Duration(seconds: 15));
+      int attempt = 0;
+
+      while (mounted && DateTime.now().isBefore(deadline)) {
+        attempt++;
+        if (kDebugMode)
+          debugPrint(
+            'Signup.wait: attempt #$attempt to fetch role for uid=$uid',
+          );
+        try {
+          final role = await AuthService().getUserRole(uid, throwOnError: true);
+          if (kDebugMode)
+            debugPrint(
+              'Signup.wait: getUserRole returned (attempt #$attempt) -> role=$role for uid=$uid',
+            );
+
+          // Notify AuthWrapper to refresh its FutureBuilder so it re-reads the role.
+          AuthService.roleRefreshNotifier.value++;
+
+          // Role fetch completed (role may be null for new users). Proceed to pop.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.popUntil(context, (route) => route.isFirst);
+          });
+          break;
+        } on FirebaseException catch (e, st) {
+          if (kDebugMode)
+            debugPrint(
+              'Signup.wait: FirebaseException on attempt #$attempt for uid=$uid -> code=${e.code}, message=${e.message}\n$st',
+            );
+          // Retry on transient failures.
+          await Future.delayed(retryDelay);
+          continue;
+        } catch (e, st) {
+          if (kDebugMode)
+            debugPrint(
+              'Signup.wait: non-Firebase exception on attempt #$attempt for uid=$uid -> $e\n$st',
+            );
+          await Future.delayed(retryDelay);
+          continue;
+        }
+      }
+
+      if (mounted && DateTime.now().isAfter(deadline)) {
+        if (kDebugMode)
+          debugPrint(
+            'Signup.wait: deadline reached while waiting for role resolution for uid=$uid — popping to root anyway',
+          );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.popUntil(context, (route) => route.isFirst);
+        });
+      }
+
+      _waitingForRole = false;
+      _authSub?.cancel();
+      _authSub = null;
+    });
+
+    // Safety: cancel subscription after a longer timeout to avoid leaks.
+    Future.delayed(const Duration(seconds: 30)).then((_) {
+      if (_authSub != null) {
+        if (kDebugMode)
+          debugPrint('Signup.wait: safety timeout cancel subscription');
+        _authSub?.cancel();
+        _authSub = null;
+        _waitingForRole = false;
+      }
+    });
   }
 
   Future<void> _submit() async {
@@ -68,8 +176,7 @@ class _SignupPageState extends State<SignupPage> {
             }
           : null;
 
-      // TODO: adapt AuthService.signUp to accept vendor metadata (if required)
-      await AuthService().signUp(
+      final user = await AuthService().signUp(
         _emailCtl.text.trim(),
         _passCtl.text.trim(),
         '${_firstNameCtl.text.trim()} ${_lastNameCtl.text.trim()}',
@@ -78,11 +185,9 @@ class _SignupPageState extends State<SignupPage> {
       );
 
       if (!mounted) return;
-      // Pop all routes and return to root - auth state listener will handle redirect
-      Navigator.popUntil(context, (route) => route.isFirst);
 
-      // If you need to save vendorData to Firestore / your DB, do that here or in a server-side flow.
-      // e.g. if (vendorData != null) await DatabaseService.createVendorProfile(userId, vendorData);
+      // Instead of immediately popping, wait for auth state + role resolution, then pop.
+      _waitForAuthAndRoleThenPop(expectedUid: user?.uid);
     } on FirebaseAuthException catch (e) {
       setState(() {
         _errorMessage = switch (e.code) {

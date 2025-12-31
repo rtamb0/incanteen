@@ -1,3 +1,4 @@
+// Top-level imports and main() retained from your file
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +12,8 @@ import 'providers/theme_notifier.dart';
 import 'pages/vendor_dashboard.dart';
 import 'pages/customer_home.dart';
 import 'pages/landing_page.dart';
+import 'pages/auth/finalising_account_page.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +48,6 @@ class _IncanteenAppState extends State<IncanteenApp> {
     // Force the theme notifier to rebuild ThemeData from current StyleConstants
     final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
     themeNotifier.setAppTheme();
-    // Alternatively: setState(() {}); // if you're not using a notifier
   }
 
   @override
@@ -73,8 +75,8 @@ class _IncanteenAppState extends State<IncanteenApp> {
   }
 }
 
-/// Wrapper widget that handles initial routing based on auth state
-/// Converted to Stateful so we can implement a clean retry mechanism (no reassemble).
+/// Wrapper widget that handles initial routing based on auth state.
+/// Listens to AuthService.roleRefreshNotifier to know when to re-run the role lookup.
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -87,6 +89,27 @@ class _AuthWrapperState extends State<AuthWrapper> {
   int _retryKey = 0;
 
   void _retry() => setState(() => _retryKey++);
+
+  // Listener callback for the global role refresh notifier
+  void _onRoleRefresh() {
+    // Force a re-evaluation of the FutureBuilder by bumping the key.
+    setState(() {
+      _retryKey++;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to requests to refresh role lookup.
+    AuthService.roleRefreshNotifier.addListener(_onRoleRefresh);
+  }
+
+  @override
+  void dispose() {
+    AuthService.roleRefreshNotifier.removeListener(_onRoleRefresh);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +132,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
             key: ValueKey(_retryKey),
             future: AuthService().getUserRole(uid, throwOnError: true),
             builder: (context, roleSnapshot) {
+              if (kDebugMode) {
+                debugPrint(
+                  'AuthWrapper build — uid=$uid, retryKey=$_retryKey, connection=${roleSnapshot.connectionState}',
+                );
+              }
+
               if (roleSnapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
@@ -121,10 +150,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 final c = user.metadata.creationTime;
                 final l = user.metadata.lastSignInTime;
                 if (c == null || l == null) return false;
-                // If creation and lastSignIn are equal or within a small tolerance, treat as new
                 final diffSeconds = c.difference(l).inSeconds.abs();
                 if (diffSeconds <= 5) return true;
-                // Also treat as new if account was created very recently (clock skew tolerant)
                 final sinceCreation = DateTime.now().difference(c).inSeconds;
                 if (sinceCreation >= 0 && sinceCreation <= 60) return true;
                 return false;
@@ -132,14 +159,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
               final newUser = isLikelyNewUser();
 
-              // If Firestore returned an error when fetching role
               if (roleSnapshot.hasError) {
-                debugPrint(
-                  'Failed to load user role for ${user.uid}: ${roleSnapshot.error}',
-                );
+                if (kDebugMode) {
+                  debugPrint(
+                    'AuthWrapper: Failed to load user role for ${user.uid}: ${roleSnapshot.error}',
+                  );
+                }
 
                 if (newUser) {
-                  // For freshly created users: don't auto-sign-out. Show landing/profile flow and a retry.
+                  // For freshly created users: show a simple retry UI.
                   return Scaffold(
                     body: Center(
                       child: Column(
@@ -154,10 +182,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
                           const SizedBox(height: 8),
                           TextButton(
                             onPressed: () {
-                              // Let the user explicitly sign out if they want
-                              AuthService().signOut().catchError(
-                                (e) => debugPrint(e.toString()),
-                              );
+                              AuthService().signOut().catchError((e) {
+                                if (kDebugMode)
+                                  debugPrint('Sign out failed: $e');
+                              });
                             },
                             child: const Text('Sign out'),
                           ),
@@ -166,13 +194,30 @@ class _AuthWrapperState extends State<AuthWrapper> {
                     ),
                   );
                 } else {
-                  // For existing users: treat permission/role errors as fatal and sign them out
+                  // For existing users: treat permission/role errors as fatal and sign them out.
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     AuthService().signOut().catchError((error) {
-                      debugPrint('Error signing out (role read error): $error');
+                      if (kDebugMode)
+                        debugPrint(
+                          'Error signing out (role read error): $error',
+                        );
                     });
                   });
-                  return const LandingPage();
+
+                  return const Scaffold(
+                    body: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 12),
+                          Text(
+                            'Account configuration error. Signing you out...',
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 }
               }
 
@@ -184,20 +229,33 @@ class _AuthWrapperState extends State<AuthWrapper> {
               } else if (role == 'customer') {
                 return const CustomerHome();
               } else {
-                // Role is missing (null/empty) — could be new user or a problem for an existing user
+                // Role is missing (null/empty)
                 if (newUser) {
-                  // New user: don't sign out; let them continue to LandingPage/profile completion
-                  return const LandingPage();
+                  // New user: show dedicated finalising page while setup completes.
+                  return const FinalisingAccountPage();
                 } else {
-                  // Existing user without role: sign out automatically
+                  // Existing user without role: sign out automatically and show interim UI.
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     AuthService().signOut().catchError((error) {
-                      debugPrint(
-                        'Error signing out user with missing role: $error',
-                      );
+                      if (kDebugMode)
+                        debugPrint(
+                          'Error signing out user with missing role: $error',
+                        );
                     });
                   });
-                  return const LandingPage();
+
+                  return const Scaffold(
+                    body: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 12),
+                          Text('Account incomplete. Signing you out...'),
+                        ],
+                      ),
+                    ),
+                  );
                 }
               }
             },
