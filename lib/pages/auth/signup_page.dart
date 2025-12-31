@@ -25,8 +25,8 @@ class _SignupPageState extends State<SignupPage> {
   final _phoneCtl = TextEditingController();
 
   // Vendor-specific controllers
-  final _businessNameCtl = TextEditingController();
-  final _businessAddressCtl = TextEditingController();
+  final _vendorNameCtl = TextEditingController();
+  final _vendorAddressCtl = TextEditingController();
 
   // Role selection
   String _role = 'customer';
@@ -46,8 +46,8 @@ class _SignupPageState extends State<SignupPage> {
     _passCtl.dispose();
     _confirmPassCtl.dispose();
     _phoneCtl.dispose();
-    _businessNameCtl.dispose();
-    _businessAddressCtl.dispose();
+    _vendorNameCtl.dispose();
+    _vendorAddressCtl.dispose();
     super.dispose();
   }
 
@@ -175,8 +175,8 @@ class _SignupPageState extends State<SignupPage> {
       // Collect vendor-specific data if needed
       final vendorData = _role == 'vendor'
           ? {
-              'businessName': _businessNameCtl.text.trim(),
-              'businessAddress': _businessAddressCtl.text.trim(),
+              'vendorName': _vendorNameCtl.text.trim(),
+              'vendorAddress': _vendorAddressCtl.text.trim(),
             }
           : null;
 
@@ -402,9 +402,9 @@ class _SignupPageState extends State<SignupPage> {
                                         CrossAxisAlignment.stretch,
                                     children: [
                                       TextFormField(
-                                        controller: _businessNameCtl,
+                                        controller: _vendorNameCtl,
                                         decoration: InputDecoration(
-                                          labelText: "Business name",
+                                          labelText: "Vendor name",
                                           prefixIcon: const Icon(
                                             Icons.storefront,
                                           ),
@@ -417,16 +417,16 @@ class _SignupPageState extends State<SignupPage> {
                                         validator: (v) {
                                           if (_role != 'vendor') return null;
                                           if (v == null || v.trim().isEmpty) {
-                                            return 'Enter business name';
+                                            return 'Enter vendor name';
                                           }
                                           return null;
                                         },
                                       ),
                                       const SizedBox(height: 12),
                                       TextFormField(
-                                        controller: _businessAddressCtl,
+                                        controller: _vendorAddressCtl,
                                         decoration: InputDecoration(
-                                          labelText: "Business address",
+                                          labelText: "Vendor address",
                                           prefixIcon: const Icon(
                                             Icons.location_on,
                                           ),
@@ -439,7 +439,7 @@ class _SignupPageState extends State<SignupPage> {
                                         validator: (v) {
                                           if (_role != 'vendor') return null;
                                           if (v == null || v.trim().isEmpty) {
-                                            return 'Enter business address';
+                                            return 'Enter vendor address';
                                           }
                                           return null;
                                         },
