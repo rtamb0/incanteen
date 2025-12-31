@@ -48,8 +48,9 @@ class AuthService {
         }
       }
     } catch (e, st) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint('AuthService.updateFcmTokenIfNeeded failed: $e\n$st');
+      }
       // Swallow non-fatal errors - FCM token update failures should not crash the app
     }
   }
@@ -71,33 +72,38 @@ class AuthService {
       final docRef = _firestore.collection('users').doc(uid);
       final doc = await docRef.get();
 
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           'AuthService.getUserRole fetched doc — uid: $uid, exists: ${doc.exists}',
         );
+      }
 
       if (doc.exists) {
         final role = doc.data()?['role'] as String?;
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint('AuthService.getUserRole role for $uid: $role');
+        }
         return role;
       }
 
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint('AuthService.getUserRole: no user document for uid: $uid');
+      }
       return null;
     } on FirebaseException catch (e, st) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           'AuthService.getUserRole FirebaseException for uid: $uid — code: ${e.code}, message: ${e.message}\n$st',
         );
+      }
       if (throwOnError) rethrow;
       return null;
     } catch (e, st) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           'AuthService.getUserRole unknown error for uid: $uid — $e\n$st',
         );
+      }
       if (throwOnError) rethrow;
       return null;
     }
@@ -161,8 +167,9 @@ class AuthService {
     try {
       fcmToken = await _messaging.getToken();
     } catch (e) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint('AuthService.signUp: failed to fetch FCM token: $e');
+      }
       fcmToken = null;
     }
 
@@ -183,20 +190,23 @@ class AuthService {
     try {
       // Write user doc to Firestore
       await _firestore.collection('users').doc(uid).set(userDoc);
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint('AuthService.signUp: user doc created for $uid');
+      }
     } catch (e) {
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint('AuthService.signUp: Failed to write user doc for $uid: $e');
+      }
       // Attempt to delete the newly-created auth user to avoid an orphan
       try {
         final current = _auth.currentUser;
         if (current != null && current.uid == uid) {
           await current.delete();
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint(
               'AuthService.signUp: Deleted orphan auth user $uid after Firestore failure.',
             );
+          }
         } else {
           if (kDebugMode) {
             debugPrint(
@@ -205,10 +215,11 @@ class AuthService {
           }
         }
       } catch (deleteErr) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint(
             'AuthService.signUp: Failed to delete orphan auth user $uid after Firestore error: $deleteErr',
           );
+        }
       }
 
       // Surface a helpful error to the caller (preserve original exception message)

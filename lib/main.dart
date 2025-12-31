@@ -183,8 +183,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
                           TextButton(
                             onPressed: () {
                               AuthService().signOut().catchError((e) {
-                                if (kDebugMode)
+                                if (kDebugMode) {
                                   debugPrint('Sign out failed: $e');
+                                }
                               });
                             },
                             child: const Text('Sign out'),
@@ -197,10 +198,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
                   // For existing users: treat permission/role errors as fatal and sign them out.
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     AuthService().signOut().catchError((error) {
-                      if (kDebugMode)
+                      if (kDebugMode) {
                         debugPrint(
                           'Error signing out (role read error): $error',
                         );
+                      }
                     });
                   });
 
@@ -237,10 +239,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
                   // Existing user without role: sign out automatically and show interim UI.
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     AuthService().signOut().catchError((error) {
-                      if (kDebugMode)
+                      if (kDebugMode) {
                         debugPrint(
                           'Error signing out user with missing role: $error',
                         );
+                      }
                     });
                   });
 

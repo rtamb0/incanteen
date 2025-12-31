@@ -25,7 +25,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _autoValidate = false;
 
   StreamSubscription<User?>? _authSub;
-  bool _waitingForRole = false;
 
   @override
   void dispose() {
@@ -45,21 +44,22 @@ class _LoginPageState extends State<LoginPage> {
         if (kDebugMode) debugPrint('Login.wait: observed authState null');
         return;
       }
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           'Login.wait: observed authState uid=${user.uid} (expectedUid=$expectedUid)',
         );
+      }
 
       if (expectedUid != null && user.uid != expectedUid) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint(
             'Login.wait: uid mismatch; ignoring until expected user signs in',
           );
+        }
         return;
       }
 
       _authSub?.pause();
-      _waitingForRole = true;
 
       final uid = user.uid;
       const retryDelay = Duration(milliseconds: 500);
@@ -68,16 +68,18 @@ class _LoginPageState extends State<LoginPage> {
 
       while (mounted && DateTime.now().isBefore(deadline)) {
         attempt++;
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint(
             'Login.wait: attempt #$attempt to fetch role for uid=$uid',
           );
+        }
         try {
           final role = await AuthService().getUserRole(uid, throwOnError: true);
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint(
               'Login.wait: getUserRole returned (attempt #$attempt) -> role=$role for uid=$uid',
             );
+          }
 
           // Notify AuthWrapper to refresh its FutureBuilder so it re-reads the role.
           AuthService.roleRefreshNotifier.value++;
@@ -88,34 +90,36 @@ class _LoginPageState extends State<LoginPage> {
           });
           break;
         } on FirebaseException catch (e, st) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint(
               'Login.wait: FirebaseException on attempt #$attempt for uid=$uid -> code=${e.code}, message=${e.message}\n$st',
             );
+          }
           await Future.delayed(retryDelay);
           continue;
         } catch (e, st) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint(
               'Login.wait: non-Firebase exception on attempt #$attempt for uid=$uid -> $e\n$st',
             );
+          }
           await Future.delayed(retryDelay);
           continue;
         }
       }
 
       if (mounted && DateTime.now().isAfter(deadline)) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint(
             'Login.wait: deadline reached while waiting for role resolution for uid=$uid — popping to root anyway',
           );
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           Navigator.popUntil(context, (route) => route.isFirst);
         });
       }
 
-      _waitingForRole = false;
       _authSub?.cancel();
       _authSub = null;
     });
@@ -123,11 +127,11 @@ class _LoginPageState extends State<LoginPage> {
     // Safety timeout
     Future.delayed(const Duration(seconds: 30)).then((_) {
       if (_authSub != null) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint('Login.wait: safety timeout cancel subscription');
+        }
         _authSub?.cancel();
         _authSub = null;
-        _waitingForRole = false;
       }
     });
   }

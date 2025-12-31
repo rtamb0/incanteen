@@ -11,7 +11,7 @@ void main() {
     // Verify that the landing page or auth wrapper loads
     // Note: This test may need to be updated based on actual authentication state
     await tester.pumpAndSettle();
-    
+
     // Basic check that the app initializes without crashing
     expect(find.byType(MaterialApp), findsOneWidget);
   });

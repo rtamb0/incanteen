@@ -36,7 +36,6 @@ class _SignupPageState extends State<SignupPage> {
   bool _autoValidate = false;
 
   StreamSubscription<User?>? _authSub;
-  bool _waitingForRole = false;
 
   @override
   void dispose() {
@@ -63,22 +62,23 @@ class _SignupPageState extends State<SignupPage> {
         if (kDebugMode) debugPrint('Signup.wait: observed authState null');
         return;
       }
-      if (kDebugMode)
+      if (kDebugMode) {
         debugPrint(
           'Signup.wait: observed authState uid=${user.uid} (expectedUid=$expectedUid)',
         );
+      }
 
       if (expectedUid != null && user.uid != expectedUid) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint(
             'Signup.wait: uid mismatch; ignoring until expected user signs in',
           );
+        }
         return;
       }
 
       // We've observed the expected auth user. Now attempt to resolve role.
       _authSub?.pause();
-      _waitingForRole = true;
 
       final uid = user.uid;
       const retryDelay = Duration(milliseconds: 500);
@@ -87,16 +87,18 @@ class _SignupPageState extends State<SignupPage> {
 
       while (mounted && DateTime.now().isBefore(deadline)) {
         attempt++;
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint(
             'Signup.wait: attempt #$attempt to fetch role for uid=$uid',
           );
+        }
         try {
           final role = await AuthService().getUserRole(uid, throwOnError: true);
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint(
               'Signup.wait: getUserRole returned (attempt #$attempt) -> role=$role for uid=$uid',
             );
+          }
 
           // Notify AuthWrapper to refresh its FutureBuilder so it re-reads the role.
           AuthService.roleRefreshNotifier.value++;
@@ -108,35 +110,37 @@ class _SignupPageState extends State<SignupPage> {
           });
           break;
         } on FirebaseException catch (e, st) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint(
               'Signup.wait: FirebaseException on attempt #$attempt for uid=$uid -> code=${e.code}, message=${e.message}\n$st',
             );
+          }
           // Retry on transient failures.
           await Future.delayed(retryDelay);
           continue;
         } catch (e, st) {
-          if (kDebugMode)
+          if (kDebugMode) {
             debugPrint(
               'Signup.wait: non-Firebase exception on attempt #$attempt for uid=$uid -> $e\n$st',
             );
+          }
           await Future.delayed(retryDelay);
           continue;
         }
       }
 
       if (mounted && DateTime.now().isAfter(deadline)) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint(
             'Signup.wait: deadline reached while waiting for role resolution for uid=$uid — popping to root anyway',
           );
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           Navigator.popUntil(context, (route) => route.isFirst);
         });
       }
 
-      _waitingForRole = false;
       _authSub?.cancel();
       _authSub = null;
     });
@@ -144,11 +148,11 @@ class _SignupPageState extends State<SignupPage> {
     // Safety: cancel subscription after a longer timeout to avoid leaks.
     Future.delayed(const Duration(seconds: 30)).then((_) {
       if (_authSub != null) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint('Signup.wait: safety timeout cancel subscription');
+        }
         _authSub?.cancel();
         _authSub = null;
-        _waitingForRole = false;
       }
     });
   }
@@ -356,7 +360,7 @@ class _SignupPageState extends State<SignupPage> {
                           ),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<String>(
-                            value: _role,
+                            initialValue: _role,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),

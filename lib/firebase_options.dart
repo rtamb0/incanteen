@@ -65,5 +65,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'incanteen.firebasestorage.app',
     iosBundleId: 'com.example.incanteen',
   );
-
 }

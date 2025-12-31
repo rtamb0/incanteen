@@ -12,16 +12,16 @@ class CustomerHome extends StatelessWidget {
       // Auth state listener in main.dart will handle navigation
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to sign out: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to sign out: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('InCanteen'),
@@ -40,18 +40,11 @@ class CustomerHome extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.restaurant_menu,
-                size: 80,
-                color: Colors.orange,
-              ),
+              const Icon(Icons.restaurant_menu, size: 80, color: Colors.orange),
               const SizedBox(height: 24),
               const Text(
                 'Customer Home',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Text(
@@ -77,7 +70,10 @@ class CustomerHome extends StatelessWidget {
                 icon: const Icon(Icons.logout),
                 label: const Text('Sign Out'),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
                 ),
               ),
             ],
