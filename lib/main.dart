@@ -1,4 +1,3 @@
-// Top-level imports and main() retained from your file
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +10,7 @@ import 'routes/router.dart';
 import 'providers/theme_notifier.dart';
 import 'pages/vendor_dashboard.dart';
 import 'pages/customer_home.dart';
+import 'pages/admin_dashboard.dart';
 import 'pages/landing_page.dart';
 import 'pages/auth/finalising_account_page.dart';
 import 'package:flutter/foundation.dart';
@@ -226,7 +226,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
               // No error — examine the role value
               final role = roleSnapshot.data;
 
-              if (role == 'vendor') {
+              if (role == 'admin') {
+                return const AdminDashboard();
+              } else if (role == 'vendor') {
                 return const VendorDashboard();
               } else if (role == 'customer') {
                 return const CustomerHome();
