@@ -15,6 +15,9 @@ class _AdminDashboardState extends State<AdminDashboard>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final AdminService _adminService = AdminService();
+  
+  // Cache for vendor document existence to avoid repeated queries
+  final Map<String, bool> _vendorDocCache = {};
 
   @override
   void initState() {
@@ -94,6 +97,19 @@ class _AdminDashboardState extends State<AdminDashboard>
                 return;
               }
 
+              // Validate email format
+              final emailRegex = RegExp(
+                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+              );
+              if (!emailRegex.hasMatch(newEmail)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter a valid email address'),
+                  ),
+                );
+                return;
+              }
+
               try {
                 // Update display name if changed
                 if (newDisplayName != userData['displayName']) {
@@ -158,14 +174,18 @@ class _AdminDashboardState extends State<AdminDashboard>
             final userData = userDoc.data() as Map<String, dynamic>;
             final userId = userDoc.id;
 
-            return FutureBuilder<bool>(
-              future: role == 'vendor'
-                  ? _adminService.vendorDocumentExists(userId)
-                  : Future.value(false),
-              builder: (context, vendorDocSnapshot) {
-                final hasVendorDoc = vendorDocSnapshot.data ?? false;
+            // Get or fetch vendor document existence status
+            bool? hasVendorDoc;
+            if (role == 'vendor') {
+              if (_vendorDocCache.containsKey(userId)) {
+                hasVendorDoc = _vendorDocCache[userId];
+              } else {
+                // Will be fetched asynchronously below
+                hasVendorDoc = null;
+              }
+            }
 
-                return Card(
+            return Card(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
@@ -186,14 +206,26 @@ class _AdminDashboardState extends State<AdminDashboard>
                           style: const TextStyle(fontSize: 12),
                         ),
                         if (role == 'vendor')
-                          Text(
-                            hasVendorDoc
-                                ? 'Vendor doc: ✓'
-                                : 'Vendor doc: ✗',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: hasVendorDoc ? Colors.green : Colors.red,
-                            ),
+                          FutureBuilder<bool>(
+                            future: hasVendorDoc != null
+                                ? Future.value(hasVendorDoc)
+                                : _adminService.vendorDocumentExists(userId).then(
+                                    (exists) {
+                                      // Cache the result
+                                      _vendorDocCache[userId] = exists;
+                                      return exists;
+                                    },
+                                  ),
+                            builder: (context, snapshot) {
+                              final exists = snapshot.data ?? false;
+                              return Text(
+                                exists ? 'Vendor doc: ✓' : 'Vendor doc: ✗',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: exists ? Colors.green : Colors.red,
+                                ),
+                              );
+                            },
                           ),
                       ],
                     ),
@@ -204,8 +236,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                     ),
                   ),
                 );
-              },
-            );
           },
         );
       },

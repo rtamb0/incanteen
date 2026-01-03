@@ -17,6 +17,11 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == uid;
     }
 
+    // Helper function to get protected field names that users cannot modify
+    function protectedFields() {
+      return ['role', 'isAdmin', 'adminLevel'];
+    }
+
     // Users collection rules
     match /users/{userId} {
       // Allow authenticated users to read their own document
@@ -27,8 +32,8 @@ service cloud.firestore {
       
       // Allow authenticated users to update their own document, but not privileged fields
       allow update: if isOwner(userId) && 
-        // Ensure role and admin-related fields are not modified by non-admins
-        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isAdmin', 'adminLevel']));
+        // Ensure protected fields are not modified by non-admins
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedFields()));
       
       // Allow admins to update any user document
       allow update: if isAdmin();
