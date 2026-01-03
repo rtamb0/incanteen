@@ -124,6 +124,15 @@ exports.adminSetUserEmail = functions.https.onCall(async (data, context) => {
     );
   }
 
+  // Validate email format
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Invalid email format."
+    );
+  }
+
   try {
     // Update Firebase Auth email
     await admin.auth().updateUser(uid, { email });
@@ -159,17 +168,32 @@ exports.adminSetUserDisplayName = functions.https.onCall(async (data, context) =
     );
   }
 
+  // Validate display name
+  const trimmedDisplayName = displayName.trim();
+  if (trimmedDisplayName.length === 0) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Display name cannot be empty."
+    );
+  }
+  if (trimmedDisplayName.length > 100) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Display name cannot exceed 100 characters."
+    );
+  }
+
   try {
     // Update Firebase Auth display name
-    await admin.auth().updateUser(uid, { displayName });
+    await admin.auth().updateUser(uid, { displayName: trimmedDisplayName });
 
     // Update Firestore user document
     await db.collection("users").doc(uid).update({
-      displayName,
+      displayName: trimmedDisplayName,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    logger.info(`Admin ${context.auth.uid} updated displayName for user ${uid} to ${displayName}`);
+    logger.info(`Admin ${context.auth.uid} updated displayName for user ${uid} to ${trimmedDisplayName}`);
 
     return { success: true, message: "Display name updated successfully" };
   } catch (error) {

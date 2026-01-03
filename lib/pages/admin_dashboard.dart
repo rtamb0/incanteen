@@ -186,56 +186,56 @@ class _AdminDashboardState extends State<AdminDashboard>
             }
 
             return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+              margin: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  child: Text(
+                    (userData['displayName'] ?? 'U')[0].toUpperCase(),
                   ),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      child: Text(
-                        (userData['displayName'] ?? 'U')[0].toUpperCase(),
+                ),
+                title: Text(userData['displayName'] ?? 'No name'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(userData['email'] ?? 'No email'),
+                    Text(
+                      'Role: ${userData['role'] ?? 'Unknown'}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    if (role == 'vendor')
+                      FutureBuilder<bool>(
+                        future: hasVendorDoc != null
+                            ? Future.value(hasVendorDoc)
+                            : _adminService.vendorDocumentExists(userId).then(
+                                (exists) {
+                                  // Cache the result
+                                  _vendorDocCache[userId] = exists;
+                                  return exists;
+                                },
+                              ),
+                        builder: (context, snapshot) {
+                          final exists = snapshot.data ?? false;
+                          return Text(
+                            exists ? 'Vendor doc: ✓' : 'Vendor doc: ✗',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: exists ? Colors.green : Colors.red,
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                    title: Text(userData['displayName'] ?? 'No name'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(userData['email'] ?? 'No email'),
-                        Text(
-                          'Role: ${userData['role'] ?? 'Unknown'}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        if (role == 'vendor')
-                          FutureBuilder<bool>(
-                            future: hasVendorDoc != null
-                                ? Future.value(hasVendorDoc)
-                                : _adminService.vendorDocumentExists(userId).then(
-                                    (exists) {
-                                      // Cache the result
-                                      _vendorDocCache[userId] = exists;
-                                      return exists;
-                                    },
-                                  ),
-                            builder: (context, snapshot) {
-                              final exists = snapshot.data ?? false;
-                              return Text(
-                                exists ? 'Vendor doc: ✓' : 'Vendor doc: ✗',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: exists ? Colors.green : Colors.red,
-                                ),
-                              );
-                            },
-                          ),
-                      ],
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () =>
-                          _showEditUserDialog(context, userData, userId),
-                    ),
-                  ),
-                );
+                  ],
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () =>
+                      _showEditUserDialog(context, userData, userId),
+                ),
+              ),
+            );
           },
         );
       },
