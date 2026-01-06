@@ -93,3 +93,86 @@ exports.notifyUserOrderReady = functions.firestore
 
     return admin.messaging().sendToDevice(fcmToken, payload);
   });
+
+/**
+ * Cloud Function to delete a user account (callable by admin only)
+ * This function deletes both the Firebase Auth account and Firestore user document
+ *
+ * Call from client:
+ * const deleteUser = firebase.functions().httpsCallable('deleteUser');
+ * await deleteUser({ userId: 'user-id-to-delete' });
+ */
+exports.deleteUser = functions.https.onCall(async (data, context) => {
+  // Check if user is authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "User must be authenticated to delete accounts."
+    );
+  }
+
+  const { userId } = data;
+
+  if (!userId) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing userId parameter"
+    );
+  }
+
+  try {
+    // Verify that the caller is an admin
+    const callerDoc = await db.collection("users").doc(context.auth.uid).get();
+    if (!callerDoc.exists || callerDoc.data().role !== "admin") {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "Only admins can delete user accounts"
+      );
+    }
+
+    // Delete Firebase Auth account
+    await admin.auth().deleteUser(userId);
+
+    // Delete Firestore user document
+    await db.collection("users").doc(userId).delete();
+
+    // Delete vendor document if exists
+    try {
+      await db.collection("vendors").doc(userId).delete();
+    } catch (err) {
+      // Vendor doc might not exist, that's okay
+      console.log(`No vendor document to delete for ${userId}`);
+    }
+
+    // Delete customer document if exists
+    try {
+      await db.collection("customers").doc(userId).delete();
+    } catch (err) {
+      // Customer doc might not exist, that's okay
+      console.log(`No customer document to delete for ${userId}`);
+    }
+
+    // Delete all orders for this user
+    const ordersSnapshot = await db
+      .collection("orders")
+      .where("userId", "==", userId)
+      .get();
+
+    const batch = db.batch();
+    ordersSnapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    await batch.commit();
+
+    return {
+      success: true,
+      message: `User ${userId} and all associated data have been deleted`,
+    };
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      `Failed to delete user: ${error.message}`
+    );
+  }
+});

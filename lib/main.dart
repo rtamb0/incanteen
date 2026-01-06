@@ -11,9 +11,12 @@ import 'routes/router.dart';
 import 'providers/theme_notifier.dart';
 import 'pages/vendor_dashboard.dart';
 import 'pages/customer_home.dart';
+import 'pages/admin/admin_dashboard.dart';
 import 'pages/landing_page.dart';
 import 'pages/auth/finalising_account_page.dart';
+import 'pages/auth/vendor_setup_page.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -226,8 +229,37 @@ class _AuthWrapperState extends State<AuthWrapper> {
               // No error — examine the role value
               final role = roleSnapshot.data;
 
-              if (role == 'vendor') {
-                return const VendorDashboard();
+              if (role == 'admin') {
+                return const AdminDashboard();
+              } else if (role == 'vendor') {
+                // Check if vendor has completed setup
+                return FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .get(),
+                  builder: (context, userDocSnapshot) {
+                    if (userDocSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    if (userDocSnapshot.hasData &&
+                        userDocSnapshot.data != null) {
+                      final userData = userDocSnapshot.data!.data() as Map?;
+                      final vendorSetupComplete =
+                          userData?['vendorSetupComplete'] as bool? ?? false;
+
+                      if (!vendorSetupComplete) {
+                        return const VendorSetupPage();
+                      }
+                    }
+
+                    return const VendorDashboard();
+                  },
+                );
               } else if (role == 'customer') {
                 return const CustomerHome();
               } else {

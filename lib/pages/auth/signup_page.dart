@@ -24,10 +24,6 @@ class _SignupPageState extends State<SignupPage> {
   final _confirmPassCtl = TextEditingController();
   final _phoneCtl = TextEditingController();
 
-  // Vendor-specific controllers
-  final _vendorNameCtl = TextEditingController();
-  final _vendorAddressCtl = TextEditingController();
-
   // Role selection
   String _role = 'customer';
   bool _isLoading = false;
@@ -46,8 +42,6 @@ class _SignupPageState extends State<SignupPage> {
     _passCtl.dispose();
     _confirmPassCtl.dispose();
     _phoneCtl.dispose();
-    _vendorNameCtl.dispose();
-    _vendorAddressCtl.dispose();
     super.dispose();
   }
 
@@ -172,20 +166,11 @@ class _SignupPageState extends State<SignupPage> {
     });
 
     try {
-      // Collect vendor-specific data if needed
-      final vendorData = _role == 'vendor'
-          ? {
-              'vendorName': _vendorNameCtl.text.trim(),
-              'vendorAddress': _vendorAddressCtl.text.trim(),
-            }
-          : null;
-
       final user = await AuthService().signUp(
         _emailCtl.text.trim(),
         _passCtl.text.trim(),
         '${_firstNameCtl.text.trim()} ${_lastNameCtl.text.trim()}',
         _role,
-        extraMetadata: vendorData,
       );
 
       if (!mounted) return;
@@ -388,70 +373,7 @@ class _SignupPageState extends State<SignupPage> {
                                 ? 'Choose a role'
                                 : null,
                           ),
-
-                          // AnimatedSwitcher shows/hides vendor-only fields when role changes.
                           const SizedBox(height: 12),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            switchInCurve: Curves.easeIn,
-                            switchOutCurve: Curves.easeOut,
-                            child: _role == 'vendor'
-                                ? Column(
-                                    key: const ValueKey('vendorFields'),
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      TextFormField(
-                                        controller: _vendorNameCtl,
-                                        decoration: InputDecoration(
-                                          labelText: "Vendor name",
-                                          prefixIcon: const Icon(
-                                            Icons.storefront,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        validator: (v) {
-                                          if (_role != 'vendor') return null;
-                                          if (v == null || v.trim().isEmpty) {
-                                            return 'Enter vendor name';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextFormField(
-                                        controller: _vendorAddressCtl,
-                                        decoration: InputDecoration(
-                                          labelText: "Vendor address",
-                                          prefixIcon: const Icon(
-                                            Icons.location_on,
-                                          ),
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        validator: (v) {
-                                          if (_role != 'vendor') return null;
-                                          if (v == null || v.trim().isEmpty) {
-                                            return 'Enter vendor address';
-                                          }
-                                          return null;
-                                        },
-                                        // optional field: no validator
-                                      ),
-                                      const SizedBox(height: 12),
-                                    ],
-                                  )
-                                : const SizedBox.shrink(
-                                    key: ValueKey('noVendorFields'),
-                                  ),
-                          ),
 
                           if (_errorMessage != null)
                             Padding(

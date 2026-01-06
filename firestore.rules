@@ -2,17 +2,98 @@ rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 12, 18);
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to get user role from cache
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    // Helper function to check if user is vendor
+    function isVendor() {
+      return isAuthenticated() && getUserRole() == 'vendor';
+    }
+    
+    // Helper function to check if user is customer
+    function isCustomer() {
+      return isAuthenticated() && getUserRole() == 'customer';
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Anyone authenticated can read their own user document
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Admins can read all user documents (no query filter, just allow all reads for admin)
+      allow read: if isAdmin();
+      
+      // Users can create their own document during signup
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Users can update their own non-role fields
+      allow update: if isAuthenticated() && 
+                      request.auth.uid == userId && 
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+      
+      // Admins can update any user (including role changes)
+      allow update: if isAdmin();
+      
+      // Admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // Vendors collection
+    match /vendors/{vendorId} {
+      // Everyone can read vendor info
+      allow read: if true;
+      
+      // Only the vendor owner can create/update their vendor info
+      allow create, update: if isAuthenticated() && 
+                               (request.auth.uid == vendorId || isAdmin());
+      
+      // Admins can delete vendors
+      allow delete: if isAdmin();
+      
+      // Vendor menus subcollection
+      match /menus/{menuId} {
+        // Everyone can read menus
+        allow read: if true;
+        
+        // Only vendor owner or admin can create/update/delete menu items
+        allow create, update, delete: if isAuthenticated() && 
+                                        (request.auth.uid == vendorId || isAdmin());
+      }
+    }
+    
+    // Orders collection
+    match /orders/{orderId} {
+      // Users can read their own orders
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.userId || 
+                     request.auth.uid == resource.data.vendorId);
+      
+      // Admins can read all orders
+      allow read: if isAdmin();
+      
+      // Customers can create orders
+      allow create: if isAuthenticated() && 
+                      isCustomer() && 
+                      request.auth.uid == request.resource.data.userId;
+      
+      // Vendors can update orders for their items
+      allow update: if isAuthenticated() && 
+                      (request.auth.uid == resource.data.vendorId || isAdmin());
+      
+      // Admins can delete orders
+      allow delete: if isAdmin();
     }
   }
 }
