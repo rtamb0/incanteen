@@ -16,6 +16,29 @@ class AdminService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  /// Check if current user is superadmin
+  Future<bool> isSuperAdmin() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        final role = doc.data()?['role'] as String?;
+        return role == 'superadmin';
+      }
+      return false;
+    } catch (e) {
+      debugPrint('AdminService.isSuperAdmin error: $e');
+      return false;
+    }
+  }
+
+  /// Check if current user is admin or superadmin
+  Future<bool> isAdminOrSuperAdmin() async {
+    return await isAdmin() || await isSuperAdmin();
+  }
+
   /// Check if current user is admin
   Future<bool> isAdmin() async {
     final user = _auth.currentUser;
@@ -25,7 +48,7 @@ class AdminService {
       final doc = await _firestore.collection('users').doc(user.uid).get();
       if (doc.exists) {
         final role = doc.data()?['role'] as String?;
-        return role == 'admin';
+        return role == 'admin' || role == 'superadmin';
       }
       return false;
     } catch (e) {
@@ -49,14 +72,40 @@ class AdminService {
     return await _firestore.collection('users').doc(userId).get();
   }
 
-  /// Update user role (admin only)
+  /// Update user role (admin/superadmin only)
   Future<void> updateUserRole(String userId, String newRole) async {
-    if (!await isAdmin()) {
+    final isSuperAdmin = await this.isSuperAdmin();
+    final isAdmin = await this.isAdmin();
+    
+    if (!isAdmin && !isSuperAdmin) {
       throw Exception('Unauthorized: Admin access required');
     }
 
-    if (!['customer', 'vendor', 'admin'].contains(newRole)) {
+    if (!['customer', 'vendor', 'admin', 'superadmin'].contains(newRole)) {
       throw Exception('Invalid role: $newRole');
+    }
+
+    // Get target user's current role
+    final targetUserDoc = await _firestore.collection('users').doc(userId).get();
+    if (!targetUserDoc.exists) {
+      throw Exception('User not found');
+    }
+    
+    final targetUserRole = targetUserDoc.data()?['role'] as String?;
+
+    // Admin cannot modify admin or superadmin accounts
+    if (!isSuperAdmin && (targetUserRole == 'admin' || targetUserRole == 'superadmin')) {
+      throw Exception('You do not have permission to modify admin or superadmin accounts');
+    }
+
+    // No one can assign superadmin role
+    if (newRole == 'superadmin') {
+      throw Exception('Superadmin role cannot be assigned');
+    }
+
+    // Admin cannot create admin accounts
+    if (!isSuperAdmin && newRole == 'admin') {
+      throw Exception('Only superadmins can create admin accounts');
     }
 
     await _firestore.collection('users').doc(userId).update({
@@ -65,12 +114,27 @@ class AdminService {
     });
   }
 
-  /// Delete user (admin only)
+  /// Delete user (admin/superadmin only)
   /// Deletes both the Firestore document and the Firebase Auth account
   /// Uses Cloud Function for secure server-side deletion
   Future<void> deleteUser(String userId) async {
+    final isSuperAdmin = await this.isSuperAdmin();
+    
     if (!await isAdmin()) {
       throw Exception('Unauthorized: Admin access required');
+    }
+
+    // Get target user's role
+    final targetUserDoc = await _firestore.collection('users').doc(userId).get();
+    if (!targetUserDoc.exists) {
+      throw Exception('User not found');
+    }
+    
+    final targetUserRole = targetUserDoc.data()?['role'] as String?;
+
+    // Admin cannot delete superadmin accounts
+    if (!isSuperAdmin && targetUserRole == 'superadmin') {
+      throw Exception('You do not have permission to delete superadmin accounts');
     }
 
     try {

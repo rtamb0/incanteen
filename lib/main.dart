@@ -135,6 +135,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
             key: ValueKey(_retryKey),
             future: AuthService().getUserRole(uid, throwOnError: true),
             builder: (context, roleSnapshot) {
+              if (roleSnapshot.connectionState == ConnectionState.done) {
+                debugPrint(
+                  'AuthWrapper role fetch — uid=$uid, role=${roleSnapshot.data}, hasError=${roleSnapshot.hasError}',
+                );
+              }
+
               if (kDebugMode) {
                 debugPrint(
                   'AuthWrapper build — uid=$uid, retryKey=$_retryKey, connection=${roleSnapshot.connectionState}',
@@ -184,7 +190,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
                           ),
                           const SizedBox(height: 8),
                           TextButton(
-                            onPressed: () {
+                            onPressed: () async {
+                              final confirmed =
+                                  await AuthService().confirmSignOut(context);
+                              if (!confirmed) return;
                               AuthService().signOut().catchError((e) {
                                 if (kDebugMode) {
                                   debugPrint('Sign out failed: $e');
@@ -229,7 +238,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
               // No error — examine the role value
               final role = roleSnapshot.data;
 
-              if (role == 'admin') {
+              if (role == 'admin' || role == 'superadmin') {
                 return const AdminDashboard();
               } else if (role == 'vendor') {
                 // Check if vendor has completed setup

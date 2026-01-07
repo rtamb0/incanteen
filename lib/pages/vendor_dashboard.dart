@@ -16,6 +16,7 @@ class _VendorDashboardState extends State<VendorDashboard> {
   final _vendorService = VendorService();
 
   Future<void> _signOut(BuildContext context) async {
+    if (!await AuthService().confirmSignOut(context)) return;
     try {
       await AuthService().signOut();
       if (!context.mounted) return;

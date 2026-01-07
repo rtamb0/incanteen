@@ -256,6 +256,8 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
 
   Color _getRoleColor(String role) {
     switch (role) {
+      case 'superadmin':
+        return Colors.redAccent;
       case 'admin':
         return Colors.purple;
       case 'vendor':
@@ -269,6 +271,8 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
 
   IconData _getRoleIcon(String role) {
     switch (role) {
+      case 'superadmin':
+        return Icons.workspace_premium;
       case 'admin':
         return Icons.admin_panel_settings;
       case 'vendor':

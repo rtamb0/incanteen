@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:incanteen/services/admin/admin_service.dart';
 
 class AdminUserDetailPage extends StatefulWidget {
@@ -72,12 +73,39 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
   }
 
   Future<void> _deleteUser() async {
+    // Prevent self-deletion
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser?.uid == widget.userId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You cannot delete your own account'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Prevent admin from deleting superadmin accounts
+    final targetUserRole = _userData?['role'] as String?;
+    if (targetUserRole == 'superadmin') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You do not have permission to delete superadmin accounts'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
         content: const Text(
-          'Are you sure you want to delete this user? This action cannot be undone.',
+          'Are you sure you want to delete this user?\n\n'
+          'This will remove their data from the database. '
+          'They will not be able to use the app anymore.\n\n'
+          'This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -112,8 +140,41 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
     }
   }
 
-  void _showRoleChangeDialog() {
+  void _showRoleChangeDialog() async {
+    // Prevent admin from changing their own role
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser?.uid == widget.userId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You cannot change your own role'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Prevent admin from modifying superadmin or admin accounts
+    final targetUserRole = _userData?['role'] as String?;
+    if (targetUserRole == 'superadmin' || targetUserRole == 'admin') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You do not have permission to modify admin or superadmin accounts'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Check if current user is superadmin
+    final currentUserDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser?.uid)
+        .get();
+    final isSuperAdmin = currentUserDoc.data()?['role'] == 'superadmin';
+
     final currentRole = _userData?['role'] as String? ?? 'customer';
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -140,15 +201,16 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
                 if (value != null) _updateRole(value);
               },
             ),
-            RadioListTile<String>(
-              title: const Text('Admin'),
-              value: 'admin',
-              groupValue: currentRole,
-              onChanged: (value) {
-                Navigator.pop(context);
-                if (value != null) _updateRole(value);
-              },
-            ),
+            if (isSuperAdmin)
+              RadioListTile<String>(
+                title: const Text('Admin'),
+                value: 'admin',
+                groupValue: currentRole,
+                onChanged: (value) {
+                  Navigator.pop(context);
+                  if (value != null) _updateRole(value);
+                },
+              ),
           ],
         ),
         actions: [
@@ -355,6 +417,8 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
 
   Color _getRoleColor(String role) {
     switch (role) {
+      case 'superadmin':
+        return Colors.redAccent;
       case 'admin':
         return Colors.purple;
       case 'vendor':
@@ -368,6 +432,8 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
 
   IconData _getRoleIcon(String role) {
     switch (role) {
+      case 'superadmin':
+        return Icons.workspace_premium;
       case 'admin':
         return Icons.admin_panel_settings;
       case 'vendor':

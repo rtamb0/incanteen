@@ -15,11 +15,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Map<String, int>? _stats;
   bool _loading = true;
   String? _error;
+  bool _isSuperAdmin = false;
 
   @override
   void initState() {
     super.initState();
+    _loadRole();
     _loadStatistics();
+  }
+
+  Future<void> _loadRole() async {
+    final isSuper = await AdminService().isSuperAdmin();
+    if (mounted) {
+      setState(() {
+        _isSuperAdmin = isSuper;
+      });
+    }
   }
 
   Future<void> _loadStatistics() async {
@@ -47,6 +58,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> _signOut(BuildContext context) async {
+    if (!await AuthService().confirmSignOut(context)) return;
     try {
       await AuthService().signOut();
       if (!context.mounted) return;
@@ -105,19 +117,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.admin_panel_settings,
+                            Icon(
+                              _isSuperAdmin
+                                  ? Icons.workspace_premium
+                                  : Icons.admin_panel_settings,
                               size: 48,
-                              color: Colors.purple,
+                              color:
+                                  _isSuperAdmin ? Colors.redAccent : Colors.purple,
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Welcome, Admin!',
-                                    style: TextStyle(
+                                  Text(
+                                    _isSuperAdmin
+                                        ? 'Welcome, SuperAdmin!'
+                                        : 'Welcome, Admin!',
+                                    style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                     ),

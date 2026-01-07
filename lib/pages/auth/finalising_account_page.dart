@@ -21,7 +21,9 @@ class _FinalisingAccountPageState extends State<FinalisingAccountPage> {
     );
   }
 
-  void _cancelAndSignOut() {
+  Future<void> _cancelAndSignOut() async {
+    final confirmed = await AuthService().confirmSignOut(context);
+    if (!confirmed) return;
     AuthService().signOut().catchError((e) {
       if (kDebugMode) debugPrint('FinalisingAccountPage.signOut failed: $e');
     });
