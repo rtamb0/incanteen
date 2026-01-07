@@ -107,7 +107,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               onRefresh: _loadStatistics,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16).copyWith(bottom: 80),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -250,9 +250,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     const SizedBox(height: 12),
 
                     _ManagementCard(
+                      title: 'Manage Admins',
+                      subtitle: 'View and manage all admin accounts',
+                      icon: Icons.admin_panel_settings_outlined,
+                      color: Colors.indigo,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          RoutesConstants.adminManageAdminsRoute,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _ManagementCard(
                       title: 'All Users',
                       subtitle: 'View and manage all users',
-                      icon: Icons.admin_panel_settings_outlined,
+                      icon: Icons.people_alt_outlined,
                       color: Colors.blue,
                       onTap: () {
                         Navigator.pushNamed(

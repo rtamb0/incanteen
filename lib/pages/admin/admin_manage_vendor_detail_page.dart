@@ -50,8 +50,8 @@ class _AdminManageVendorDetailPageState
           final data = doc.data() as Map<String, dynamic>?;
           setState(() {
             _vendorData = data;
-            _vendorNameCtl.text = (data?['name'] as String?) ?? '';
-            _vendorLocationCtl.text = (data?['location'] as String?) ?? '';
+            _vendorNameCtl.text = (data?['storeName'] as String?) ?? '';
+            _vendorLocationCtl.text = (data?['storeLocation'] as String?) ?? '';
             _loading = false;
           });
         } else {
@@ -155,7 +155,8 @@ class _AdminManageVendorDetailPageState
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    _vendorData?['name'] as String? ?? 'N/A',
+                                    _vendorData?['storeName'] as String? ??
+                                        'N/A',
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -163,7 +164,7 @@ class _AdminManageVendorDetailPageState
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    _vendorData?['location'] as String? ??
+                                    _vendorData?['storeLocation'] as String? ??
                                         'N/A',
                                     style: const TextStyle(
                                       fontSize: 12,
@@ -245,11 +246,12 @@ class _AdminManageVendorDetailPageState
                       const SizedBox(height: 12),
                       _InfoCard(
                         label: 'Name',
-                        value: _vendorData?['name'] as String? ?? 'N/A',
+                        value: _vendorData?['storeName'] as String? ?? 'N/A',
                       ),
                       _InfoCard(
                         label: 'Location',
-                        value: _vendorData?['location'] as String? ?? 'N/A',
+                        value:
+                            _vendorData?['storeLocation'] as String? ?? 'N/A',
                       ),
                       if (_vendorData?['createdAt'] != null)
                         _InfoCard(

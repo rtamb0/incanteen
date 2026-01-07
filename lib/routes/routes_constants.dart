@@ -14,6 +14,7 @@ class RoutesConstants {
   static const String adminDashboardRoute = "/admin-dashboard";
   static const String adminManageUsersRoute = "/admin-manage-users";
   static const String adminUserDetailRoute = "/admin-user-detail";
+  static const String adminManageAdminsRoute = "/admin-manage-admins";
   static const String adminManageVendorsRoute = "/admin-manage-vendors";
   static const String adminManageVendorDetailRoute =
       "/admin-manage-vendor-detail";

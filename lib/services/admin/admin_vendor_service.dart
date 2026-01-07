@@ -52,10 +52,10 @@ class AdminVendorService {
 
     final updates = <String, dynamic>{};
     if (name != null && name.isNotEmpty) {
-      updates['name'] = name;
+      updates['storeName'] = name;
     }
     if (location != null && location.isNotEmpty) {
-      updates['location'] = location;
+      updates['storeLocation'] = location;
     }
 
     if (updates.isEmpty) {

@@ -14,6 +14,7 @@ import 'package:incanteen/pages/order/place_order_page.dart';
 import 'package:incanteen/pages/admin/admin_dashboard.dart';
 import 'package:incanteen/pages/admin/admin_manage_users_page.dart';
 import 'package:incanteen/pages/admin/admin_user_detail_page.dart';
+import 'package:incanteen/pages/admin/admin_manage_admins_page.dart';
 import 'package:incanteen/pages/admin/admin_manage_vendors_page.dart';
 import 'package:incanteen/pages/admin/admin_manage_vendor_detail_page.dart';
 
@@ -80,6 +81,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (_) => AdminUserDetailPage(userId: args['userId']),
       );
+
+    case RoutesConstants.adminManageAdminsRoute:
+      return MaterialPageRoute(builder: (_) => const AdminManageAdminsPage());
 
     case RoutesConstants.adminManageVendorsRoute:
       return MaterialPageRoute(builder: (_) => const AdminManageVendorsPage());

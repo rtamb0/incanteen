@@ -3,16 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:incanteen/services/admin/admin_service.dart';
 import 'package:incanteen/routes/routes_constants.dart';
 
-class AdminManageUsersPage extends StatefulWidget {
-  final String? roleFilter;
-
-  const AdminManageUsersPage({super.key, this.roleFilter});
+class AdminManageAdminsPage extends StatefulWidget {
+  const AdminManageAdminsPage({super.key});
 
   @override
-  State<AdminManageUsersPage> createState() => _AdminManageUsersPageState();
+  State<AdminManageAdminsPage> createState() => _AdminManageAdminsPageState();
 }
 
-class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
+class _AdminManageAdminsPageState extends State<AdminManageAdminsPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -22,20 +20,11 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
     super.dispose();
   }
 
-  String _getPageTitle() {
-    if (widget.roleFilter == 'customer') {
-      return 'Manage Customers';
-    } else if (widget.roleFilter == 'vendor') {
-      return 'Manage Vendors';
-    }
-    return 'Manage All Users';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getPageTitle()),
+        title: const Text('Manage Admins'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -75,10 +64,10 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
             ),
           ),
 
-          // User list
+          // Admin list
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: AdminService().getAllUsers(roleFilter: widget.roleFilter),
+              stream: AdminService().getAllUsers(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
@@ -94,13 +83,13 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.people_outline,
+                          Icons.admin_panel_settings,
                           size: 64,
                           color: Colors.grey[400],
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No users found',
+                          'No admins found',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
@@ -111,15 +100,13 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
                   );
                 }
 
-                // Filter users based on role and search query
-                final users = snapshot.data!.docs.where((doc) {
+                // Filter admins and superadmins
+                final admins = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final role = data['role'] as String?;
 
-                  // Filter by role if specified
-                  if (widget.roleFilter != null &&
-                      widget.roleFilter!.isNotEmpty &&
-                      role != widget.roleFilter) {
+                  // Only show admin and superadmin
+                  if (role != 'admin' && role != 'superadmin') {
                     return false;
                   }
 
@@ -134,30 +121,28 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
                       email.contains(_searchQuery);
                 }).toList();
 
-                if (users.isEmpty) {
+                if (admins.isEmpty) {
                   return Center(
                     child: Text(
-                      'No users match your search',
+                      'No admins match your search',
                       style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                   );
                 }
 
                 return ListView.builder(
-                  itemCount: users.length,
+                  itemCount: admins.length,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 0,
                   ).copyWith(bottom: 80),
                   itemBuilder: (context, index) {
-                    final doc = users[index];
+                    final doc = admins[index];
                     final data = doc.data() as Map<String, dynamic>;
 
                     final userId = doc.id;
                     final displayName = data['displayName'] as String? ?? 'N/A';
                     final email = data['email'] as String? ?? 'N/A';
                     final role = data['role'] as String? ?? 'unknown';
-                    final isActive = data['isActive'] as bool? ?? true;
                     final createdAt = data['createdAt'] as Timestamp?;
 
                     return Card(
@@ -170,36 +155,9 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
                             color: _getRoleColor(role),
                           ),
                         ),
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                displayName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            if (!isActive)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text(
-                                  'Inactive',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                          ],
+                        title: Text(
+                          displayName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,10 +226,6 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
         return Colors.redAccent;
       case 'admin':
         return Colors.purple;
-      case 'vendor':
-        return Colors.blue;
-      case 'customer':
-        return Colors.orange;
       default:
         return Colors.grey;
     }
@@ -283,10 +237,6 @@ class _AdminManageUsersPageState extends State<AdminManageUsersPage> {
         return Icons.workspace_premium;
       case 'admin':
         return Icons.admin_panel_settings;
-      case 'vendor':
-        return Icons.store;
-      case 'customer':
-        return Icons.person;
       default:
         return Icons.help_outline;
     }

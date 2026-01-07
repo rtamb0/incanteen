@@ -173,9 +173,17 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
       return;
     }
 
-    // Prevent admin from modifying superadmin or admin accounts
+    // Check if current user is superadmin
+    final currentUserDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser?.uid)
+        .get();
+    final isSuperAdmin = currentUserDoc.data()?['role'] == 'superadmin';
+
+    // Prevent admin (non-superadmin) from modifying superadmin or admin accounts
     final targetUserRole = _userData?['role'] as String?;
-    if (targetUserRole == 'superadmin' || targetUserRole == 'admin') {
+    if (!isSuperAdmin &&
+        (targetUserRole == 'superadmin' || targetUserRole == 'admin')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -186,13 +194,6 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
       );
       return;
     }
-
-    // Check if current user is superadmin
-    final currentUserDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser?.uid)
-        .get();
-    final isSuperAdmin = currentUserDoc.data()?['role'] == 'superadmin';
 
     final currentRole = _userData?['role'] as String? ?? 'customer';
 

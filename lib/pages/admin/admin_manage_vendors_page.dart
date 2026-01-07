@@ -132,36 +132,59 @@ class _AdminManageVendorsPageState extends State<AdminManageVendorsPage> {
 
                 return ListView.builder(
                   itemCount: vendors.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                  ).copyWith(bottom: 80),
                   itemBuilder: (context, index) {
                     final doc = vendors[index];
                     final data = doc.data() as Map<String, dynamic>;
 
                     final userId = doc.id;
-                    final displayName = data['displayName'] as String? ?? 'N/A';
-                    final email = data['email'] as String? ?? 'N/A';
+                    final accountName = data['displayName'] as String? ?? 'N/A';
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.blue.withOpacity(0.2),
-                          child: const Icon(Icons.store, color: Colors.blue),
-                        ),
-                        title: Text(
-                          displayName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(email),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            RoutesConstants.adminManageVendorDetailRoute,
-                            arguments: {'vendorId': userId},
-                          );
-                        },
-                      ),
+                    // Fetch vendor store info to get storeName
+                    return FutureBuilder<DocumentSnapshot>(
+                      future: AdminVendorService().getVendorInfo(userId),
+                      builder: (context, vendorSnapshot) {
+                        String storeName = 'N/A';
+                        if (vendorSnapshot.hasData &&
+                            vendorSnapshot.data!.exists) {
+                          storeName =
+                              vendorSnapshot.data!['storeName'] as String? ??
+                              'N/A';
+                        }
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.blue.withOpacity(0.2),
+                              child: const Icon(
+                                Icons.store,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            title: Text(
+                              storeName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(accountName),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                            ),
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                RoutesConstants.adminManageVendorDetailRoute,
+                                arguments: {'vendorId': userId},
+                              );
+                            },
+                          ),
+                        );
+                      },
                     );
                   },
                 );
