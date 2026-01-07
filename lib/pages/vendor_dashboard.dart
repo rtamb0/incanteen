@@ -177,6 +177,29 @@ class _VendorDashboardState extends State<VendorDashboard> {
                         const Divider(),
                         const SizedBox(height: 8),
 
+                        // Store Image (shown first)
+                        if (imageUrl.isNotEmpty) ...[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              imageUrl,
+                              height: 240,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 240,
+                                  color: Colors.grey.shade200,
+                                  child: const Center(
+                                    child: Icon(Icons.image_not_supported),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
                         // Store Name
                         _buildInfoRow(Icons.store, 'Store Name', storeName),
                         const SizedBox(height: 12),
@@ -192,12 +215,6 @@ class _VendorDashboardState extends State<VendorDashboard> {
                             'Description',
                             description,
                           ),
-                          const SizedBox(height: 12),
-                        ],
-
-                        // Image URL
-                        if (imageUrl.isNotEmpty) ...[
-                          _buildInfoRow(Icons.image, 'Image URL', imageUrl),
                           const SizedBox(height: 12),
                         ],
 

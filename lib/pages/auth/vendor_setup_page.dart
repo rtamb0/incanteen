@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'dart:io';
 import 'package:incanteen/services/auth/auth_service.dart';
 
 class VendorSetupPage extends StatefulWidget {
@@ -13,15 +17,81 @@ class VendorSetupPage extends StatefulWidget {
 class _VendorSetupPageState extends State<VendorSetupPage> {
   final _formKey = GlobalKey<FormState>();
   final _vendorNameCtl = TextEditingController();
-  final _vendorAddressCtl = TextEditingController();
+  final _imagePicker = ImagePicker();
+  
+  String _selectedLocation = 'Kantin B1';
+  File? _selectedImage;
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
     _vendorNameCtl.dispose();
-    _vendorAddressCtl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 100,
+      );
+      if (pickedFile != null) {
+        // Crop the image with 4:3 aspect ratio
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: pickedFile.path,
+          aspectRatio: const CropAspectRatio(ratioX: 4, ratioY: 3),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Crop Store Image',
+              toolbarColor: Colors.blue,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.ratio4x3,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Crop Store Image',
+              aspectRatioLockDimensionSwapEnabled: true,
+              resetButtonHidden: false,
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          setState(() => _selectedImage = File(croppedFile.path));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: $e')),
+        );
+      }
+    }
+  }
+
+  Future<String?> _uploadImageToFirebase(String userId) async {
+    if (_selectedImage == null) return null;
+
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'store_$timestamp.jpg';
+      final ref = FirebaseStorage.instance
+          .ref('vendors')
+          .child(userId)
+          .child(fileName);
+
+      await ref.putFile(_selectedImage!);
+      final downloadUrl = await ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to upload image: $e')),
+        );
+      }
+      return null;
+    }
   }
 
   Future<void> _submit() async {
@@ -38,12 +108,18 @@ class _VendorSetupPageState extends State<VendorSetupPage> {
         throw Exception('No authenticated user found');
       }
 
+      // Upload image if selected
+      String? imageUrl;
+      if (_selectedImage != null) {
+        imageUrl = await _uploadImageToFirebase(user.uid);
+      }
+
       // Create vendor store info
       await FirebaseFirestore.instance.collection('vendors').doc(user.uid).set({
         'name': _vendorNameCtl.text.trim(),
-        'location': _vendorAddressCtl.text.trim(),
+        'location': _selectedLocation,
         'description': '',
-        'imageUrl': '',
+        'imageUrl': imageUrl ?? '',
         'isOpen': true,
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -124,28 +200,108 @@ class _VendorSetupPageState extends State<VendorSetupPage> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _vendorAddressCtl,
-                        maxLines: 3,
+                      DropdownButtonFormField<String>(
+                        value: _selectedLocation,
                         decoration: InputDecoration(
-                          labelText: 'Store Location / Address',
-                          hintText: 'e.g., Jl. Merdeka No. 123, Jakarta Pusat',
+                          labelText: 'Store Location',
                           prefixIcon: const Icon(Icons.location_on),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          alignLabelWithHint: true,
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Location is required';
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Kantin B1',
+                            child: Text('Kantin B1'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Kantin B2',
+                            child: Text('Kantin B2'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedLocation = value;
+                            });
                           }
-                          if (value.trim().length < 5) {
-                            return 'Please provide a detailed location';
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Location is required';
                           }
                           return null;
                         },
                       ),
+                      const SizedBox(height: 20),
+                      // Image picker section
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          width: double.infinity,
+                          height: 240,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey.withOpacity(0.3),
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.grey.withOpacity(0.05),
+                          ),
+                          child: _selectedImage != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.file(
+                                    _selectedImage!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image_outlined,
+                                      size: 48,
+                                      color: Colors.grey.withOpacity(0.5),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Tap to upload store image',
+                                      style: TextStyle(
+                                        color: Colors.grey.withOpacity(0.7),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '(Optional)',
+                                      style: TextStyle(
+                                        color: Colors.grey.withOpacity(0.5),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      if (_selectedImage != null) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _selectedImage = null;
+                              });
+                            },
+                            icon: const Icon(Icons.close, size: 18),
+                            label: const Text('Remove image'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       if (_errorMessage != null) ...[
                         Container(

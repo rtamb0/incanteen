@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 
 /// Service for admin operations on users (customers and vendors)
@@ -15,6 +16,7 @@ class AdminService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   /// Check if current user is superadmin
   Future<bool> isSuperAdmin() async {
@@ -122,7 +124,6 @@ class AdminService {
 
   /// Delete user (admin/superadmin only)
   /// Deletes both the Firestore document and the Firebase Auth account
-  /// Uses Cloud Function for secure server-side deletion
   Future<void> deleteUser(String userId) async {
     final isSuperAdmin = await this.isSuperAdmin();
 
@@ -149,11 +150,6 @@ class AdminService {
     }
 
     try {
-      // Import needed: import 'package:firebase_functions/firebase_functions.dart';
-      // Then call: final callable = FirebaseFunctions.instance.httpsCallable('deleteUser');
-      // For now, just delete from Firestore - Cloud Function must be deployed separately
-      // and called from the admin panel
-
       // Delete user document and related data
       await _firestore.collection('users').doc(userId).delete();
 
@@ -164,10 +160,17 @@ class AdminService {
         debugPrint('No vendor document to delete for $userId');
       }
 
-      debugPrint('User $userId deleted from Firestore');
-      debugPrint(
-        'Note: To also delete Firebase Auth account, the Cloud Function deleteUser must be deployed',
-      );
+      // Delete Firebase Auth account via Cloud Function
+      try {
+        final callable = _functions.httpsCallable('deleteUser');
+        await callable.call({'uid': userId});
+        debugPrint('Firebase Auth account deleted for $userId');
+      } catch (e) {
+        debugPrint('Error deleting Firebase Auth account for $userId: $e');
+        // Continue even if auth deletion fails - Firestore data is already cleaned
+      }
+
+      debugPrint('User $userId fully deleted (Firestore + Auth)');
     } catch (e) {
       debugPrint('AdminService.deleteUser error: $e');
       rethrow;

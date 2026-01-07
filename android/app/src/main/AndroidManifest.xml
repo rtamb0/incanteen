@@ -3,6 +3,23 @@
         android:label="incanteen"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Image Cropper (uCrop) activity -->
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
+        <!-- FileProvider for Image Cropper temporary files -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.image_cropper.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/image_cropper_file_paths" />
+        </provider>
         <activity
             android:name=".MainActivity"
             android:exported="true"
