@@ -3,67 +3,76 @@
  * Firebase Functions v2 API
  */
 
-const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const {
+  onDocumentCreated,
+  onDocumentUpdated,
+} = require("firebase-functions/v2/firestore");
 const { onCall } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-exports.notifyKitchenNewOrder = onDocumentCreated("orders/{orderId}", async (event) => {
-  const order = event.data.data();
-  const orderId = event.params.orderId;
+exports.notifyKitchenNewOrder = onDocumentCreated(
+  "orders/{orderId}",
+  async (event) => {
+    const order = event.data.data();
+    const orderId = event.params.orderId;
 
-  // Get the vendor(s) for this order
-  const vendorId = order.vendorId;
-  const vendorDoc = await db.collection("users").doc(vendorId).get();
+    // Get the vendor(s) for this order
+    const vendorId = order.vendorId;
+    const vendorDoc = await db.collection("users").doc(vendorId).get();
 
-  if (!vendorDoc.exists) return null;
+    if (!vendorDoc.exists) return null;
 
-  const fcmToken = vendorDoc.data().fcmToken;
-  if (!fcmToken) return null;
+    const fcmToken = vendorDoc.data().fcmToken;
+    if (!fcmToken) return null;
 
-  const payload = {
-    notification: {
-      title: "New Order Received!",
-      body: `Order #${orderId} has been placed.`,
-    },
-    data: {
-      orderId: orderId,
-      type: "new_order",
-    },
-  };
+    const payload = {
+      notification: {
+        title: "New Order Received!",
+        body: `Order #${orderId} has been placed.`,
+      },
+      data: {
+        orderId: orderId,
+        type: "new_order",
+      },
+    };
 
-  return admin.messaging().sendToDevice(fcmToken, payload);
-});
+    return admin.messaging().sendToDevice(fcmToken, payload);
+  }
+);
 
-exports.notifyUserOrderReady = onDocumentUpdated("orders/{orderId}", async (event) => {
-  const before = event.data.before.data();
-  const after = event.data.after.data();
-  const orderId = event.params.orderId;
+exports.notifyUserOrderReady = onDocumentUpdated(
+  "orders/{orderId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+    const orderId = event.params.orderId;
 
-  // Only notify if status changed to 'ready'
-  if (before.status === "ready" || after.status !== "ready") return null;
+    // Only notify if status changed to 'ready'
+    if (before.status === "ready" || after.status !== "ready") return null;
 
-  const userDoc = await db.collection("users").doc(after.userId).get();
-  if (!userDoc.exists) return null;
+    const userDoc = await db.collection("users").doc(after.userId).get();
+    if (!userDoc.exists) return null;
 
-  const fcmToken = userDoc.data().fcmToken;
-  if (!fcmToken) return null;
+    const fcmToken = userDoc.data().fcmToken;
+    if (!fcmToken) return null;
 
-  const payload = {
-    notification: {
-      title: "Your Order is Ready!",
-      body: `Order #${orderId} is ready for pickup.`,
-    },
-    data: {
-      orderId: orderId,
-      type: "order_ready",
-    },
-  };
+    const payload = {
+      notification: {
+        title: "Your Order is Ready!",
+        body: `Order #${orderId} is ready for pickup.`,
+      },
+      data: {
+        orderId: orderId,
+        type: "order_ready",
+      },
+    };
 
-  return admin.messaging().sendToDevice(fcmToken, payload);
-});
+    return admin.messaging().sendToDevice(fcmToken, payload);
+  }
+);
 
 /**
  * Cloud Function to delete a user account (callable by admin only)

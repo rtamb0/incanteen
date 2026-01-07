@@ -122,8 +122,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                   ? Icons.workspace_premium
                                   : Icons.admin_panel_settings,
                               size: 48,
-                              color:
-                                  _isSuperAdmin ? Colors.redAccent : Colors.purple,
+                              color: _isSuperAdmin
+                                  ? Colors.redAccent
+                                  : Colors.purple,
                             ),
                             const SizedBox(width: 16),
                             Expanded(

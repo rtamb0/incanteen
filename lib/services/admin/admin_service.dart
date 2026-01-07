@@ -76,7 +76,7 @@ class AdminService {
   Future<void> updateUserRole(String userId, String newRole) async {
     final isSuperAdmin = await this.isSuperAdmin();
     final isAdmin = await this.isAdmin();
-    
+
     if (!isAdmin && !isSuperAdmin) {
       throw Exception('Unauthorized: Admin access required');
     }
@@ -86,16 +86,22 @@ class AdminService {
     }
 
     // Get target user's current role
-    final targetUserDoc = await _firestore.collection('users').doc(userId).get();
+    final targetUserDoc = await _firestore
+        .collection('users')
+        .doc(userId)
+        .get();
     if (!targetUserDoc.exists) {
       throw Exception('User not found');
     }
-    
+
     final targetUserRole = targetUserDoc.data()?['role'] as String?;
 
     // Admin cannot modify admin or superadmin accounts
-    if (!isSuperAdmin && (targetUserRole == 'admin' || targetUserRole == 'superadmin')) {
-      throw Exception('You do not have permission to modify admin or superadmin accounts');
+    if (!isSuperAdmin &&
+        (targetUserRole == 'admin' || targetUserRole == 'superadmin')) {
+      throw Exception(
+        'You do not have permission to modify admin or superadmin accounts',
+      );
     }
 
     // No one can assign superadmin role
@@ -119,22 +125,27 @@ class AdminService {
   /// Uses Cloud Function for secure server-side deletion
   Future<void> deleteUser(String userId) async {
     final isSuperAdmin = await this.isSuperAdmin();
-    
+
     if (!await isAdmin()) {
       throw Exception('Unauthorized: Admin access required');
     }
 
     // Get target user's role
-    final targetUserDoc = await _firestore.collection('users').doc(userId).get();
+    final targetUserDoc = await _firestore
+        .collection('users')
+        .doc(userId)
+        .get();
     if (!targetUserDoc.exists) {
       throw Exception('User not found');
     }
-    
+
     final targetUserRole = targetUserDoc.data()?['role'] as String?;
 
     // Admin cannot delete superadmin accounts
     if (!isSuperAdmin && targetUserRole == 'superadmin') {
-      throw Exception('You do not have permission to delete superadmin accounts');
+      throw Exception(
+        'You do not have permission to delete superadmin accounts',
+      );
     }
 
     try {

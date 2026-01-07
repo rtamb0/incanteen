@@ -191,8 +191,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
                           const SizedBox(height: 8),
                           TextButton(
                             onPressed: () async {
-                              final confirmed =
-                                  await AuthService().confirmSignOut(context);
+                              final confirmed = await AuthService()
+                                  .confirmSignOut(context);
                               if (!confirmed) return;
                               AuthService().signOut().catchError((e) {
                                 if (kDebugMode) {

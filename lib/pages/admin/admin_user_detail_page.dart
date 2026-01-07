@@ -90,7 +90,9 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
     if (targetUserRole == 'superadmin') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You do not have permission to delete superadmin accounts'),
+          content: Text(
+            'You do not have permission to delete superadmin accounts',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -158,7 +160,9 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
     if (targetUserRole == 'superadmin' || targetUserRole == 'admin') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('You do not have permission to modify admin or superadmin accounts'),
+          content: Text(
+            'You do not have permission to modify admin or superadmin accounts',
+          ),
           backgroundColor: Colors.red,
         ),
       );
