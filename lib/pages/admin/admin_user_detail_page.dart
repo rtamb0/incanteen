@@ -124,16 +124,34 @@ class _AdminUserDetailPageState extends State<AdminUserDetailPage> {
     );
 
     if (confirmed == true) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Deleting user...'),
+            ],
+          ),
+        ),
+      );
+
       try {
         await AdminService().deleteUser(widget.userId);
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.pop(context); // Close loading dialog
+          Navigator.pop(context); // Close user detail page
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('User deleted successfully')),
           );
         }
       } catch (e) {
         if (mounted) {
+          Navigator.pop(context); // Close loading dialog
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('Failed to delete user: $e')));

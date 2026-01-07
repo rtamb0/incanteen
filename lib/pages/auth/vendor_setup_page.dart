@@ -18,7 +18,7 @@ class _VendorSetupPageState extends State<VendorSetupPage> {
   final _formKey = GlobalKey<FormState>();
   final _vendorNameCtl = TextEditingController();
   final _imagePicker = ImagePicker();
-  
+
   String _selectedLocation = 'Kantin B1';
   File? _selectedImage;
   bool _isLoading = false;
@@ -63,9 +63,9 @@ class _VendorSetupPageState extends State<VendorSetupPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to pick image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to pick image: $e')));
       }
     }
   }
@@ -86,9 +86,9 @@ class _VendorSetupPageState extends State<VendorSetupPage> {
       return downloadUrl;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
       }
       return null;
     }

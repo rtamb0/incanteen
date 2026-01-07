@@ -16,7 +16,10 @@ class AdminService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  // Use explicit region to match deployed Cloud Functions (default is us-central1)
+  final FirebaseFunctions _functions = FirebaseFunctions.instanceFor(
+    region: 'us-central1',
+  );
 
   /// Check if current user is superadmin
   Future<bool> isSuperAdmin() async {
@@ -150,27 +153,12 @@ class AdminService {
     }
 
     try {
-      // Delete user document and related data
-      await _firestore.collection('users').doc(userId).delete();
-
-      // Delete vendor document if exists
-      try {
-        await _firestore.collection('vendors').doc(userId).delete();
-      } catch (e) {
-        debugPrint('No vendor document to delete for $userId');
-      }
-
-      // Delete Firebase Auth account via Cloud Function
-      try {
-        final callable = _functions.httpsCallable('deleteUser');
-        await callable.call({'uid': userId});
-        debugPrint('Firebase Auth account deleted for $userId');
-      } catch (e) {
-        debugPrint('Error deleting Firebase Auth account for $userId: $e');
-        // Continue even if auth deletion fails - Firestore data is already cleaned
-      }
-
-      debugPrint('User $userId fully deleted (Firestore + Auth)');
+      // Use Cloud Function to delete Auth + Firestore with admin privileges
+      final callable = _functions.httpsCallable('deleteUser');
+      await callable.call({'userId': userId});
+      debugPrint(
+        'User $userId fully deleted (Firestore + Auth) via Cloud Function',
+      );
     } catch (e) {
       debugPrint('AdminService.deleteUser error: $e');
       rethrow;

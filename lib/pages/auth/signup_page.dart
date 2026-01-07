@@ -357,7 +357,9 @@ class _SignupPageState extends State<SignupPage> {
                                       .toList(),
                                   onChanged: (val) {
                                     if (val != null) {
-                                      setState(() => _selectedCountryCode = val);
+                                      setState(
+                                        () => _selectedCountryCode = val,
+                                      );
                                     }
                                   },
                                   menuMaxHeight: 320,
@@ -371,7 +373,9 @@ class _SignupPageState extends State<SignupPage> {
                                   keyboardType: TextInputType.phone,
                                   decoration: InputDecoration(
                                     labelText: "Phone",
-                                    hintText: _getPhonePlaceholder(_selectedCountryCode),
+                                    hintText: _getPhonePlaceholder(
+                                      _selectedCountryCode,
+                                    ),
                                     prefixIcon: const Icon(Icons.phone),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -381,7 +385,10 @@ class _SignupPageState extends State<SignupPage> {
                                     if (value == null || value.isEmpty) {
                                       return "Phone number is required";
                                     }
-                                    final numericOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+                                    final numericOnly = value.replaceAll(
+                                      RegExp(r'[^0-9]'),
+                                      '',
+                                    );
                                     if (numericOnly.length <
                                         ValidationConstants
                                             .minPhoneNumberLength) {

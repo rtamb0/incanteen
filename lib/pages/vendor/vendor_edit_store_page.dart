@@ -22,7 +22,7 @@ class _VendorEditStorePageState extends State<VendorEditStorePage> {
   late TextEditingController _nameCtl;
   late TextEditingController _descriptionCtl;
   late bool _isOpen;
-  
+
   late String _selectedLocation;
   late String _currentImageUrl;
   File? _selectedImage;
@@ -85,9 +85,9 @@ class _VendorEditStorePageState extends State<VendorEditStorePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
       }
     }
   }
@@ -108,9 +108,9 @@ class _VendorEditStorePageState extends State<VendorEditStorePage> {
       return downloadUrl;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to upload image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
       }
       return null;
     }
@@ -192,59 +192,59 @@ class _VendorEditStorePageState extends State<VendorEditStorePage> {
                             ),
                           )
                         : _currentImageUrl.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  _currentImageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.image_outlined,
-                                          size: 48,
-                                          color: Colors.grey.withOpacity(0.5),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          'Tap to change image',
-                                          style: TextStyle(
-                                            color: Colors.grey.withOpacity(0.7),
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              )
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.image_outlined,
-                                    size: 48,
-                                    color: Colors.grey.withOpacity(0.5),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'Tap to upload store image',
-                                    style: TextStyle(
-                                      color: Colors.grey.withOpacity(0.7),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '(Optional)',
-                                    style: TextStyle(
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              _currentImageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image_outlined,
+                                      size: 48,
                                       color: Colors.grey.withOpacity(0.5),
-                                      fontSize: 12,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Tap to change image',
+                                      style: TextStyle(
+                                        color: Colors.grey.withOpacity(0.7),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.image_outlined,
+                                size: 48,
+                                color: Colors.grey.withOpacity(0.5),
                               ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Tap to upload store image',
+                                style: TextStyle(
+                                  color: Colors.grey.withOpacity(0.7),
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '(Optional)',
+                                style: TextStyle(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
                 if (_selectedImage != null) ...[
@@ -259,9 +259,7 @@ class _VendorEditStorePageState extends State<VendorEditStorePage> {
                       },
                       icon: const Icon(Icons.close, size: 18),
                       label: const Text('Remove new image'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                      ),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
                     ),
                   ),
                 ],

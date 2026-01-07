@@ -91,10 +91,11 @@ exports.deleteUser = onCall(async (request) => {
   }
 
   try {
-    // Verify that the caller is an admin
+    // Verify that the caller is admin or superadmin
     const callerDoc = await db.collection("users").doc(request.auth.uid).get();
-    if (!callerDoc.exists || callerDoc.data().role !== "admin") {
-      throw new Error("Only admins can delete user accounts");
+    const callerRole = callerDoc.exists ? callerDoc.data().role : null;
+    if (callerRole !== "admin" && callerRole !== "superadmin") {
+      throw new Error("Only admins or superadmins can delete user accounts");
     }
 
     // Delete Firebase Auth account
