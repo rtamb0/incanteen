@@ -29,6 +29,39 @@ class _SignupPageState extends State<SignupPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // Phone country code selection
+  final List<Map<String, String>> _countryCodes = [
+    {'code': '+62', 'label': '🇮🇩'},
+    {'code': '+60', 'label': '🇲🇾'},
+    {'code': '+65', 'label': '🇸🇬'},
+    {'code': '+63', 'label': '🇵🇭'},
+    {'code': '+66', 'label': '🇹🇭'},
+    {'code': '+1', 'label': '🇺🇸'},
+    {'code': '+44', 'label': '🇬🇧'},
+  ];
+  String _selectedCountryCode = '+62';
+
+  String _getPhonePlaceholder(String countryCode) {
+    switch (countryCode) {
+      case '+62':
+        return '812345678'; // Indonesia
+      case '+60':
+        return '123456789'; // Malaysia
+      case '+65':
+        return '87654321'; // Singapore
+      case '+63':
+        return '9123456789'; // Philippines
+      case '+66':
+        return '812345678'; // Thailand
+      case '+1':
+        return '5551234567'; // USA
+      case '+44':
+        return '7911123456'; // UK
+      default:
+        return '1234567890';
+    }
+  }
+
   bool _autoValidate = false;
 
   StreamSubscription<User?>? _authSub;
@@ -166,11 +199,17 @@ class _SignupPageState extends State<SignupPage> {
     });
 
     try {
+      final numericPhone = _phoneCtl.text.replaceAll(RegExp(r'[^0-9]'), '');
+
       final user = await AuthService().signUp(
         _emailCtl.text.trim(),
         _passCtl.text.trim(),
         '${_firstNameCtl.text.trim()} ${_lastNameCtl.text.trim()}',
         _role,
+        extraMetadata: {
+          'phone': '$_selectedCountryCode$numericPhone',
+          'countryCode': _selectedCountryCode,
+        },
       );
 
       if (!mounted) return;
@@ -288,26 +327,71 @@ class _SignupPageState extends State<SignupPage> {
                             },
                           ),
                           const SizedBox(height: 14),
-                          TextFormField(
-                            controller: _phoneCtl,
-                            keyboardType: TextInputType.phone,
-                            decoration: InputDecoration(
-                              labelText: "Phone",
-                              prefixIcon: const Icon(Icons.phone),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          Row(
+                            children: [
+                              Flexible(
+                                flex: 4,
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedCountryCode,
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    labelText: 'Code',
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 12,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  items: _countryCodes
+                                      .map(
+                                        (item) => DropdownMenuItem(
+                                          value: item['code'],
+                                          child: Text(
+                                            '${item['label']} ${item['code']}',
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _selectedCountryCode = val);
+                                    }
+                                  },
+                                  menuMaxHeight: 320,
+                                ),
                               ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return "Phone number is required";
-                              }
-                              if (value.length <
-                                  ValidationConstants.minPhoneNumberLength) {
-                                return "Minimum ${ValidationConstants.minPhoneNumberLength} digits";
-                              }
-                              return null;
-                            },
+                              const SizedBox(width: 12),
+                              Flexible(
+                                flex: 7,
+                                child: TextFormField(
+                                  controller: _phoneCtl,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: InputDecoration(
+                                    labelText: "Phone",
+                                    hintText: _getPhonePlaceholder(_selectedCountryCode),
+                                    prefixIcon: const Icon(Icons.phone),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return "Phone number is required";
+                                    }
+                                    final numericOnly = value.replaceAll(RegExp(r'[^0-9]'), '');
+                                    if (numericOnly.length <
+                                        ValidationConstants
+                                            .minPhoneNumberLength) {
+                                      return "Minimum ${ValidationConstants.minPhoneNumberLength} digits";
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 14),
                           PasswordField(passCtl: _passCtl),
