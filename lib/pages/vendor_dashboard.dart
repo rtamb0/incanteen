@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:incanteen/services/auth/auth_service.dart';
 import 'package:incanteen/services/vendor/vendor_service.dart';
 import 'package:incanteen/pages/vendor/vendor_edit_store_page.dart';
+import 'package:incanteen/pages/vendor/vendor_profile_page.dart';
 
 class VendorDashboard extends StatefulWidget {
   const VendorDashboard({super.key});
@@ -288,10 +289,7 @@ class _VendorDashboardState extends State<VendorDashboard> {
         showUnselectedLabels: true,
         currentIndex: 0,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.restaurant_menu),
             label: 'Menu',
@@ -304,13 +302,16 @@ class _VendorDashboardState extends State<VendorDashboard> {
             icon: Icon(Icons.analytics),
             label: 'Analytics',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         onTap: (index) {
-          if (index != 0) {
+          if (index == 4) {
+            // Profile
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const VendorProfilePage()),
+            );
+          } else if (index != 0) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Coming soon'),

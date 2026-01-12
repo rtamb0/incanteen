@@ -207,7 +207,7 @@ class _SignupPageState extends State<SignupPage> {
         '${_firstNameCtl.text.trim()} ${_lastNameCtl.text.trim()}',
         _role,
         extraMetadata: {
-          'phone': '$_selectedCountryCode$numericPhone',
+          'phoneNumber': '$_selectedCountryCode$numericPhone',
           'countryCode': _selectedCountryCode,
         },
       );

@@ -21,12 +21,14 @@ const testUsers = [
     password: "Test123!",
     displayName: "Customer One",
     role: "customer",
+    phoneNumber: "081234567891",
   },
   {
     email: "customer2@test.com",
     password: "Test123!",
     displayName: "Customer Two",
     role: "customer",
+    phoneNumber: "081234567892",
   },
   // Vendors
   {
@@ -34,6 +36,7 @@ const testUsers = [
     password: "Test123!",
     displayName: "Vendor One",
     role: "vendor",
+    phoneNumber: "081234567893",
     vendorData: {
       storeName: "Warung Makan Satu",
       storeLocation: "Kantin B1",
@@ -46,6 +49,7 @@ const testUsers = [
     password: "Test123!",
     displayName: "Vendor Two",
     role: "vendor",
+    phoneNumber: "081234567894",
     vendorData: {
       storeName: "Warung Makan Dua",
       storeLocation: "Kantin B2",
@@ -58,12 +62,14 @@ const testUsers = [
     password: "Test123!",
     displayName: "Admin One",
     role: "admin",
+    phoneNumber: "081234567895",
   },
   {
     email: "admin2@test.com",
     password: "Test123!",
     displayName: "Admin Two",
     role: "admin",
+    phoneNumber: "081234567896",
   },
 ];
 
@@ -83,14 +89,18 @@ async function createTestUsers() {
       console.log(`✓ Created Auth user: ${userData.email} (${userRecord.uid})`);
 
       // Create Firestore user document
-      await db.collection("users").doc(userRecord.uid).set({
-        uid: userRecord.uid,
-        email: userData.email,
-        displayName: userData.displayName,
-        role: userData.role,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      await db
+        .collection("users")
+        .doc(userRecord.uid)
+        .set({
+          uid: userRecord.uid,
+          email: userData.email,
+          displayName: userData.displayName,
+          role: userData.role,
+          phoneNumber: userData.phoneNumber || "",
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
 
       console.log(`  ✓ Created Firestore user document`);
 
