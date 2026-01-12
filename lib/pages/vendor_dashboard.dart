@@ -104,11 +104,17 @@ class _VendorDashboardState extends State<VendorDashboard> {
           }
 
           final storeData = snapshot.data!.data() as Map<String, dynamic>;
-          final storeName = storeData['name'] ?? 'My Store';
-          final location = storeData['location'] ?? 'No location set';
-          final description = storeData['description'] ?? '';
-          final imageUrl = storeData['imageUrl'] ?? '';
-          final isOpen = storeData['isOpen'] ?? false;
+          final storeName =
+              storeData['storeName'] ?? storeData['name'] ?? 'My Store';
+          final location =
+              storeData['storeLocation'] ??
+              storeData['location'] ??
+              'No location set';
+          final description =
+              storeData['description'] ?? storeData['storeDescription'] ?? '';
+          final imageUrl =
+              storeData['imageUrl'] ?? storeData['storeImageUrl'] ?? '';
+          final isOpen = storeData['isOpen'] ?? storeData['isActive'] ?? false;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),

@@ -38,11 +38,26 @@ class VendorService {
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
-    if (name != null) updates['name'] = name;
-    if (location != null) updates['location'] = location;
-    if (description != null) updates['description'] = description;
-    if (imageUrl != null) updates['imageUrl'] = imageUrl;
-    if (isOpen != null) updates['isOpen'] = isOpen;
+    if (name != null) {
+      updates['name'] = name;
+      updates['storeName'] = name;
+    }
+    if (location != null) {
+      updates['location'] = location;
+      updates['storeLocation'] = location;
+    }
+    if (description != null) {
+      updates['description'] = description;
+      updates['storeDescription'] = description;
+    }
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      updates['imageUrl'] = imageUrl;
+      updates['storeImageUrl'] = imageUrl;
+    }
+    if (isOpen != null) {
+      updates['isOpen'] = isOpen;
+      updates['isActive'] = isOpen;
+    }
 
     await _firestore.collection('vendors').doc(user.uid).update(updates);
   }

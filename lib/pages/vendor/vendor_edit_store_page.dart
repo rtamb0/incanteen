@@ -34,13 +34,23 @@ class _VendorEditStorePageState extends State<VendorEditStorePage> {
   @override
   void initState() {
     super.initState();
-    _nameCtl = TextEditingController(text: widget.storeData['name'] ?? '');
-    _selectedLocation = widget.storeData['location'] ?? 'Kantin B1';
-    _currentImageUrl = widget.storeData['imageUrl'] ?? '';
-    _descriptionCtl = TextEditingController(
-      text: widget.storeData['description'] ?? '',
+    _nameCtl = TextEditingController(
+      text: widget.storeData['storeName'] ?? widget.storeData['name'] ?? '',
     );
-    _isOpen = widget.storeData['isOpen'] ?? true;
+    _selectedLocation =
+        widget.storeData['storeLocation'] ??
+        widget.storeData['location'] ??
+        'Kantin B1';
+    _currentImageUrl =
+        widget.storeData['storeImageUrl'] ?? widget.storeData['imageUrl'] ?? '';
+    _descriptionCtl = TextEditingController(
+      text:
+          widget.storeData['storeDescription'] ??
+          widget.storeData['description'] ??
+          '',
+    );
+    _isOpen =
+        widget.storeData['isActive'] ?? widget.storeData['isOpen'] ?? true;
   }
 
   @override

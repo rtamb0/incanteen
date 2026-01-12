@@ -36,7 +36,7 @@ const testUsers = [
     role: "vendor",
     vendorData: {
       storeName: "Warung Makan Satu",
-      storeLocation: "Kantin Utara",
+      storeLocation: "Kantin B1",
       storeDescription:
         "Menyajikan makanan Indonesia dengan cita rasa autentik",
     },
@@ -48,7 +48,7 @@ const testUsers = [
     role: "vendor",
     vendorData: {
       storeName: "Warung Makan Dua",
-      storeLocation: "Kantin Selatan",
+      storeLocation: "Kantin B2",
       storeDescription: "Spesialis makanan cepat saji dan minuman",
     },
   },

@@ -267,7 +267,35 @@ class _AuthWrapperState extends State<AuthWrapper> {
                           userData?['vendorSetupComplete'] as bool? ?? false;
 
                       if (!vendorSetupComplete) {
-                        return const VendorSetupPage();
+                        // Fallback: if vendor doc already exists, treat setup as complete
+                        return FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection('vendors')
+                              .doc(user.uid)
+                              .get(),
+                          builder: (context, vendorDocSnapshot) {
+                            if (vendorDocSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Scaffold(
+                                body: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            if (vendorDocSnapshot.hasData &&
+                                vendorDocSnapshot.data?.exists == true) {
+                              // Optionally mark as complete so future logins skip this path
+                              FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(user.uid)
+                                  .update({'vendorSetupComplete': true});
+                              return const VendorDashboard();
+                            }
+
+                            return const VendorSetupPage();
+                          },
+                        );
                       }
                     }
 
