@@ -48,3 +48,6 @@ app.*.map.json
 server/node_modules/
 server/package-lock.json
 server/.env
+
+# Firebase service account (keep out of VCS)
+functions/serviceAccountKey.json
