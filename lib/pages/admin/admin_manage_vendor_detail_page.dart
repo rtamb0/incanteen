@@ -130,7 +130,7 @@ class _AdminManageVendorDetailPageState
               onRefresh: _loadVendorData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16).copyWith(bottom: 80),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
