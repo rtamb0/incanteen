@@ -275,50 +275,49 @@ class _VendorDashboardState extends State<VendorDashboard> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-
-                // Quick Actions
-                const Text(
-                  'Quick Actions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  children: [
-                    _buildActionCard(
-                      icon: Icons.restaurant_menu,
-                      title: 'Manage Menu',
-                      subtitle: 'Coming soon',
-                      onTap: () {},
-                    ),
-                    _buildActionCard(
-                      icon: Icons.receipt_long,
-                      title: 'Orders',
-                      subtitle: 'Coming soon',
-                      onTap: () {},
-                    ),
-                    _buildActionCard(
-                      icon: Icons.analytics,
-                      title: 'Analytics',
-                      subtitle: 'Coming soon',
-                      onTap: () {},
-                    ),
-                    _buildActionCard(
-                      icon: Icons.settings,
-                      title: 'Settings',
-                      subtitle: 'Coming soon',
-                      onTap: () {},
-                    ),
-                  ],
-                ),
+                const SizedBox(height: 80), // Space for bottom nav
               ],
             ),
           );
+        },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        currentIndex: 0,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant_menu),
+            label: 'Menu',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long),
+            label: 'Orders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.analytics),
+            label: 'Analytics',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+        onTap: (index) {
+          if (index != 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Coming soon'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          }
         },
       ),
     );
@@ -350,44 +349,6 @@ class _VendorDashboardState extends State<VendorDashboard> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 40, color: Colors.blue),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(fontSize: 10, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
